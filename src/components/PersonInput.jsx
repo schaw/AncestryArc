@@ -56,9 +56,12 @@ export default function PersonInput({ people, onSave, initialData = null, curren
     race: '',
     gender: '',
     spouse: '',
+    spouseStartDate: '',
     address: '',
     isPublic: true,
   });
+
+  const [saveStatus, setSaveStatus] = useState(null);
 
   const [parents, setParents] = useState({
     primaryMother: '',
@@ -78,6 +81,7 @@ export default function PersonInput({ people, onSave, initialData = null, curren
         race: initialData.race || '',
         gender: initialData.gender || '',
         spouse: initialData.spouse || '',
+        spouseStartDate: initialData.spouseStartDate || '',
         address: initialData.address || '',
         isPublic: initialData.isPublic !== false,
       });
@@ -140,10 +144,12 @@ export default function PersonInput({ people, onSave, initialData = null, curren
     e.preventDefault();
     if (!formData.name) return;
 
+    setSaveStatus('saving');
+
     const validCustomFields = customFields.filter(f => f.key.trim() !== '' && f.value.trim() !== '');
     const validOthers = parents.others.filter(o => o.id.trim() !== '');
 
-    onSave({
+    const personData = {
       ...formData,
       createdBy: initialData?.createdBy || currentUser,
       parents: {
@@ -152,9 +158,17 @@ export default function PersonInput({ people, onSave, initialData = null, curren
         others: validOthers
       },
       customFields: validCustomFields
-    });
-    
-    navigate('/');
+    };
+
+    setTimeout(() => {
+      onSave(personData);
+      setSaveStatus('saved');
+      
+      setTimeout(() => {
+        setSaveStatus(null);
+        if (!isEditing) navigate('/');
+      }, 1500);
+    }, 300);
   };
 
   return (
@@ -198,7 +212,7 @@ export default function PersonInput({ people, onSave, initialData = null, curren
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginTop: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginTop: '16px' }}>
           <div className="form-group">
             <label className="form-label">Gender</label>
             <select name="gender" className="form-control" value={formData.gender} onChange={handleChange}>
@@ -211,6 +225,10 @@ export default function PersonInput({ people, onSave, initialData = null, curren
           <div className="form-group">
             <label className="form-label">Spouse ID</label>
             <input type="text" name="spouse" className="form-control" value={formData.spouse} onChange={handleChange} placeholder="System ID of Spouse" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Spouse Start Date</label>
+            <input type="date" name="spouseStartDate" className="form-control" value={formData.spouseStartDate} onChange={handleChange} />
           </div>
           <div className="form-group">
             <label className="form-label">Address</label>
@@ -295,8 +313,8 @@ export default function PersonInput({ people, onSave, initialData = null, curren
             <input type="checkbox" name="isPublic" checked={formData.isPublic} onChange={handleChange} />
             Make this person's record public
           </label>
-          <button type="submit" className="btn btn-primary">
-            <Save size={18} /> {isEditing ? 'Update Person' : 'Save Person'}
+          <button type="submit" className="btn btn-primary" disabled={saveStatus === 'saving' || saveStatus === 'saved'}>
+            {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? <><Check size={18} /> Saved!</> : <><Save size={18} /> {isEditing ? 'Update Person' : 'Save Person'}</>}
           </button>
         </div>
       </form>

@@ -45,8 +45,9 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
     setTimeout(() => setCopiedId(false), 2000);
   };
 
+  const [saveStatus, setSaveStatus] = useState(null);
   const [formData, setFormData] = useState({
-    id: '', name: '', dob: '', height: '', race: '', gender: '', spouse: '', address: '', isPublic: true,
+    id: '', name: '', dob: '', height: '', race: '', gender: '', spouse: '', spouseStartDate: '', address: '', isPublic: true,
   });
 
   const [parents, setParents] = useState({ primaryMother: '', primaryFather: '', others: [] });
@@ -62,6 +63,7 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
         race: person.race || '',
         gender: person.gender || '',
         spouse: person.spouse || '',
+        spouseStartDate: person.spouseStartDate || '',
         address: person.address || '',
         isPublic: person.isPublic !== false,
       });
@@ -93,10 +95,12 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
 
   const handleSave = () => {
     if (!formData.name) return;
+    setSaveStatus('saving');
+
     const validCustomFields = customFields.filter(f => f.key.trim() !== '' && f.value.trim() !== '');
     const validOthers = parents.others.filter(o => o.id.trim() !== '');
 
-    onSave({
+    const updatedData = {
       ...formData,
       createdBy: person.createdBy,
       parents: {
@@ -105,7 +109,13 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
         others: validOthers
       },
       customFields: validCustomFields
-    });
+    };
+
+    setTimeout(() => {
+      onSave(updatedData);
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus(null), 1500);
+    }, 300);
   };
 
   const suggestedSpouses = useMemo(() => {
@@ -210,6 +220,11 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
       </div>
 
       <div className="form-group">
+        <label className="form-label">Spouse Start Date</label>
+        <input type="date" name="spouseStartDate" className="form-control" value={formData.spouseStartDate} onChange={handleChange} disabled={!isOwner} />
+      </div>
+
+      <div className="form-group">
         <label className="form-label">Address</label>
         <input type="text" name="address" className="form-control" value={formData.address} onChange={handleChange} disabled={!isOwner} />
       </div>
@@ -256,7 +271,9 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
           </button>
           <div className="d-flex gap-2">
             <button onClick={onDiscard} className="btn btn-text">Discard</button>
-            <button onClick={handleSave} className="btn btn-primary"><Save size={16} /> Save</button>
+            <button onClick={handleSave} className="btn btn-primary" disabled={saveStatus === 'saving' || saveStatus === 'saved'}>
+              {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? <><Check size={16} /> Saved!</> : <><Save size={16} /> Save</>}
+            </button>
           </div>
         </div>
       )}
