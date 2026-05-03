@@ -102,43 +102,69 @@ export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpd
   const [selectedDetails, setSelectedDetails] = useState(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [rfInstance, setRfInstance] = useState(null);
+
+  useEffect(() => {
+    if (rfInstance && nodes.length > 0) {
+      setTimeout(() => {
+        rfInstance.fitView({ padding: 0.5, duration: 800 });
+      }, 50);
+    }
+  }, [nodes, rfInstance]);
 
   useEffect(() => {
     setSelectedDetails(people.find(p => p.id === rootId) || null);
   }, [rootId, people]);
 
   useEffect(() => {
-    const relatedIds = new Set([rootId]);
+    let relatedIds = new Set();
     
-    const getParents = (id) => {
-      const p = people.find(x => x.id === id);
-      if (!p || !p.parents) return [];
-      return [p.parents.primaryMother, p.parents.primaryFather, ...(p.parents.others?.map(o => o.id) || [])].filter(Boolean);
-    };
-    
-    const getChildren = (id) => {
-      return people.filter(p => {
-        if (!p.parents) return false;
-        return p.parents.primaryMother === id || p.parents.primaryFather === id || p.parents.others?.some(o => o.id === id);
-      }).map(p => p.id);
-    };
+    if (!rootId) {
+      people.forEach(p => relatedIds.add(p.id));
+    } else {
+      relatedIds.add(rootId);
+      
+      const getParents = (id) => {
+        const p = people.find(x => x.id === id);
+        if (!p || !p.parents) return [];
+        return [p.parents.primaryMother, p.parents.primaryFather, ...(p.parents.others?.map(o => o.id) || [])].filter(Boolean);
+      };
+      
+      const getChildren = (id) => {
+        return people.filter(p => {
+          if (!p.parents) return false;
+          return p.parents.primaryMother === id || p.parents.primaryFather === id || p.parents.others?.some(o => o.id === id);
+        }).map(p => p.id);
+      };
 
-    // 1 Level Up (Parents)
-    const parents = getParents(rootId);
-    parents.forEach(p => relatedIds.add(p));
-    
-    // 2 Levels Up (Grandparents)
-    parents.forEach(p => getParents(p).forEach(gp => relatedIds.add(gp)));
-    
-    // Siblings (Children of Parents)
-    parents.forEach(p => getChildren(p).forEach(sib => relatedIds.add(sib)));
-    
-    // 1 Level Down (Children)
-    const children = getChildren(rootId);
-    children.forEach(c => relatedIds.add(c));
-    
-    // 2 Levels Down (Grandchildren)
-    children.forEach(c => getChildren(c).forEach(gc => relatedIds.add(gc)));
+      // 1 Level Up (Parents)
+      const parents = getParents(rootId);
+      parents.forEach(p => relatedIds.add(p));
+      
+      // 2 Levels Up (Grandparents)
+      parents.forEach(p => getParents(p).forEach(gp => relatedIds.add(gp)));
+      
+      // Siblings (Children of Parents)
+      parents.forEach(p => getChildren(p).forEach(sib => relatedIds.add(sib)));
+      
+      // 1 Level Down (Children)
+      const children = getChildren(rootId);
+      children.forEach(c => relatedIds.add(c));
+      
+      // 2 Levels Down (Grandchildren)
+      children.forEach(c => getChildren(c).forEach(gc => relatedIds.add(gc)));
+
+      // Spouses & Co-parents
+      const coParents = new Set();
+      children.forEach(c => {
+        const p = people.find(x => x.id === c);
+        if (p && p.parents) {
+          if (p.parents.primaryMother && p.parents.primaryMother !== rootId) coParents.add(p.parents.primaryMother);
+          if (p.parents.primaryFather && p.parents.primaryFather !== rootId) coParents.add(p.parents.primaryFather);
+        }
+      });
+      coParents.forEach(cp => relatedIds.add(cp));
+    }
 
     // Pull in Spouses / Co-parents to ensure horizontal partners are visible!
     Array.from(relatedIds).forEach(id => {
@@ -292,7 +318,11 @@ export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpd
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClickInternal}
         nodeTypes={nodeTypes}
+        onInit={setRfInstance}
+        minZoom={0.05}
+        maxZoom={3}
         fitView
+        fitViewOptions={{ padding: 0.5 }}
         attributionPosition="bottom-left"
       >
         <Background color="#ccc" gap={16} />

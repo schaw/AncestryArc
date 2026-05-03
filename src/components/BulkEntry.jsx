@@ -13,9 +13,11 @@ const createEmptyRow = (index) => ({
   phone: '',
   email: '',
   nationalId: '',
+  spouse: '',
   primaryMother: '',
   primaryFather: '',
-  otherAttributes: '' 
+  otherAttributes: '',
+  notes: ''
 });
 
 const SearchableParentInput = ({ value, onChange, placeholder, people }) => {
@@ -167,8 +169,10 @@ export default function BulkEntry({ onAddBulk, currentUser, people }) {
         dob: r.dob,
         height: r.height,
         race: r.race,
+        spouse: resolveParentId(r.spouse),
         isPublic: true,
         createdBy: currentUser,
+        notes: r.notes || '',
         parents: { 
           primaryMother: resolveParentId(r.primaryMother), 
           primaryFather: resolveParentId(r.primaryFather), 
@@ -199,22 +203,24 @@ export default function BulkEntry({ onAddBulk, currentUser, people }) {
         When you save, the system will automatically generate real System IDs and link them up correctly!
       </p>
 
-      <div className="card" style={{ overflowX: 'auto', padding: '0', whiteSpace: 'nowrap' }}>
+      <div className="card" style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 220px)', padding: '0', whiteSpace: 'nowrap' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
-            <tr style={{ backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>
-              <th style={{ padding: '16px' }}>Temp ID</th>
-              <th style={{ padding: '16px' }}>Name *</th>
-              <th style={{ padding: '16px' }}>Mother ID</th>
-              <th style={{ padding: '16px' }}>Father ID</th>
-              <th style={{ padding: '16px' }}>DOB</th>
-              <th style={{ padding: '16px' }}>Height</th>
-              <th style={{ padding: '16px' }}>Race</th>
-              <th style={{ padding: '16px' }}>Phone</th>
-              <th style={{ padding: '16px' }}>Email</th>
-              <th style={{ padding: '16px' }}>National ID</th>
-              <th style={{ padding: '16px' }}>Other Attributes</th>
-              <th style={{ padding: '16px', textAlign: 'center' }}>Action</th>
+            <tr style={{ backgroundColor: 'var(--background-color)' }}>
+              <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Temp ID</th>
+              <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Name *</th>
+              <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Mother ID</th>
+              <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Father ID</th>
+              <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Spouse ID</th>
+              <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>DOB</th>
+              <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Height</th>
+              <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Race</th>
+              <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Phone</th>
+              <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Email</th>
+              <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>National ID</th>
+              <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Notes</th>
+              <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Other Attributes</th>
+              <th style={{ padding: '16px', textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -250,6 +256,9 @@ export default function BulkEntry({ onAddBulk, currentUser, people }) {
                     <SearchableParentInput value={row.primaryFather} onChange={(val) => handleInputChange(row.tempId, 'primaryFather', val)} placeholder="ID or Temp ID" people={people} />
                   </td>
                   <td style={{ padding: '12px 16px' }}>
+                    <SearchableParentInput value={row.spouse} onChange={(val) => handleInputChange(row.tempId, 'spouse', val)} placeholder="ID or Temp ID" people={people} />
+                  </td>
+                  <td style={{ padding: '12px 16px' }}>
                     <input type="date" className="form-control" style={inputStyle} value={row.dob} onChange={(e) => handleInputChange(row.tempId, 'dob', e.target.value)} />
                   </td>
                   <td style={{ padding: '12px 16px' }}>
@@ -266,6 +275,9 @@ export default function BulkEntry({ onAddBulk, currentUser, people }) {
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <input type="text" className="form-control" style={inputStyle} value={row.nationalId} onChange={(e) => handleInputChange(row.tempId, 'nationalId', e.target.value)} placeholder="Nat. ID" />
+                  </td>
+                  <td style={{ padding: '12px 16px' }}>
+                    <input type="text" className="form-control" style={inputStyle} value={row.notes} onChange={(e) => handleInputChange(row.tempId, 'notes', e.target.value)} placeholder="Background Info" />
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <input type="text" className="form-control" style={inputStyle} value={row.otherAttributes} onChange={(e) => handleInputChange(row.tempId, 'otherAttributes', e.target.value)} placeholder="e.g. Loc: NY" />

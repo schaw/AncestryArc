@@ -6,7 +6,7 @@ const getInitials = (name) => {
   return name.trim().split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 };
 
-export default function GlobalGraph({ people, onNodeClick }) {
+export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
   const containerRef = useRef();
   const graphRef = useRef();
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
@@ -22,16 +22,18 @@ export default function GlobalGraph({ people, onNodeClick }) {
 
   useEffect(() => {
     if (graphRef.current) {
-      // Weaker repulsion so they form a tighter globe, allowing overlap if needed
-      graphRef.current.d3Force('charge').strength(-50);
-      graphRef.current.d3Force('link').distance(20);
-      
-      // Auto-fit to viewport after a slight delay to let physics settle
-      setTimeout(() => {
-        if (graphRef.current) graphRef.current.zoomToFit(400, 20);
-      }, 1000);
+      // Adjust forces based on viewMode
+      if (viewMode === 'web') {
+        // Strong repulsion to untangle intersecting lines
+        graphRef.current.d3Force('charge').strength(-300);
+        // Larger distance to give nodes room to breathe
+        graphRef.current.d3Force('link').distance(50);
+      } else {
+        graphRef.current.d3Force('charge').strength(-150);
+        graphRef.current.d3Force('link').distance(40);
+      }
     }
-  }, [people]);
+  }, [people, viewMode]);
 
   const graphData = useMemo(() => {
     const getChildrenCount = (id) => {
@@ -162,6 +164,8 @@ export default function GlobalGraph({ people, onNodeClick }) {
         width={dimensions.width}
         height={dimensions.height}
         graphData={graphData}
+        dagMode={viewMode === 'generational' ? 'td' : viewMode === 'radial' ? 'radialout' : null}
+        dagLevelDistance={viewMode === 'generational' ? 80 : viewMode === 'radial' ? 100 : null}
         nodeLabel={(node) => node.isUnion ? '' : node.name}
         nodeCanvasObject={drawNode}
         nodeRelSize={6}
@@ -173,6 +177,10 @@ export default function GlobalGraph({ people, onNodeClick }) {
           if (!node.isUnion) onNodeClick(node.id);
         }}
         backgroundColor="var(--surface-color)"
+        cooldownTicks={40}
+        onEngineStop={() => {
+          if (graphRef.current) graphRef.current.zoomToFit(200, 120);
+        }}
       />
     </div>
   );

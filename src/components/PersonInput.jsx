@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Save, Copy, Check, ClipboardPaste } from 'lucide-react';
+import { Plus, Trash2, Save, Copy, Check, ClipboardPaste, Search, X } from 'lucide-react';
 import { generateUniqueId } from '../utils/generateId';
 
-const ParentIdInput = ({ value, onChange, disabled, placeholder }) => {
+const ParentIdInput = ({ value, onChange, disabled, placeholder, people }) => {
   const [copied, setCopied] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [query, setQuery] = useState('');
+
+  const filtered = (people || []).filter(p => p.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(value);
@@ -22,8 +26,14 @@ const ParentIdInput = ({ value, onChange, disabled, placeholder }) => {
   };
 
   return (
-    <div className="d-flex align-center gap-2">
-      <input type="text" className="form-control" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} placeholder={placeholder} />
+    <div className="d-flex align-center gap-2" style={{ position: 'relative' }}>
+      <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+        <input type="text" className="form-control" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} placeholder={placeholder} style={{ paddingRight: '30px' }} />
+        <button type="button" className="btn btn-text" style={{ position: 'absolute', right: '4px', padding: '4px' }} onClick={() => { setShowSearch(!showSearch); setQuery(''); }} title="Search Person" disabled={disabled}>
+          <Search size={14} color="var(--primary-color)" />
+        </button>
+      </div>
+
       {value ? (
         <button type="button" onClick={handleCopy} className="btn btn-text" style={{ padding: '8px', minWidth: 'auto', color: copied ? 'green' : 'var(--primary-color)' }} title="Copy ID">
           {copied ? <Check size={18} /> : <Copy size={18} />}
@@ -32,6 +42,43 @@ const ParentIdInput = ({ value, onChange, disabled, placeholder }) => {
         <button type="button" onClick={handlePaste} className="btn btn-text" style={{ padding: '8px', minWidth: 'auto', color: 'var(--primary-color)' }} title="Paste ID" disabled={disabled}>
           <ClipboardPaste size={18} />
         </button>
+      )}
+
+      {showSearch && (
+        <div style={{ 
+          position: 'absolute', top: '100%', left: 0, width: '250px', backgroundColor: 'var(--surface-color)', 
+          boxShadow: 'var(--elevation-3)', borderRadius: '8px', zIndex: 100, padding: '8px', marginTop: '4px'
+        }}>
+          <div className="d-flex align-center gap-2 mb-2">
+            <input 
+              autoFocus
+              type="text" 
+              className="form-control" 
+              placeholder="Search name..." 
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              style={{ flex: 1, padding: '4px 8px' }}
+            />
+            <button className="btn btn-text" onClick={() => setShowSearch(false)} style={{ padding: '4px' }}>
+              <X size={14} />
+            </button>
+          </div>
+          {query && filtered.map(p => (
+            <div 
+              key={p.id} 
+              style={{ padding: '8px', cursor: 'pointer', borderBottom: '1px solid rgba(0,0,0,0.05)', fontSize: '0.8rem' }}
+              onClick={() => { onChange(p.id); setShowSearch(false); }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(98,0,234,0.05)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <div style={{ fontWeight: 'bold' }}>{p.name}</div>
+              <div style={{ color: 'var(--text-secondary)' }}>ID: {p.id}</div>
+            </div>
+          ))}
+          {query && filtered.length === 0 && (
+             <div style={{ padding: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No matches</div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -58,6 +105,8 @@ export default function PersonInput({ people, onSave, initialData = null, curren
     spouse: '',
     spouseStartDate: '',
     address: '',
+    ancestralVillage: '',
+    notes: '',
     isPublic: true,
   });
 
@@ -66,6 +115,10 @@ export default function PersonInput({ people, onSave, initialData = null, curren
   const [parents, setParents] = useState({
     primaryMother: '',
     primaryFather: '',
+    primaryMotherStartYear: '',
+    primaryMotherEndYear: '',
+    primaryFatherStartYear: '',
+    primaryFatherEndYear: '',
     others: []
   });
 
@@ -83,11 +136,17 @@ export default function PersonInput({ people, onSave, initialData = null, curren
         spouse: initialData.spouse || '',
         spouseStartDate: initialData.spouseStartDate || '',
         address: initialData.address || '',
+        ancestralVillage: initialData.ancestralVillage || '',
+        notes: initialData.notes || '',
         isPublic: initialData.isPublic !== false,
       });
       setParents({
         primaryMother: initialData.parents?.primaryMother || '',
         primaryFather: initialData.parents?.primaryFather || '',
+        primaryMotherStartYear: initialData.parents?.primaryMotherStartYear || '',
+        primaryMotherEndYear: initialData.parents?.primaryMotherEndYear || '',
+        primaryFatherStartYear: initialData.parents?.primaryFatherStartYear || '',
+        primaryFatherEndYear: initialData.parents?.primaryFatherEndYear || '',
         others: initialData.parents?.others || []
       });
       setCustomFields(initialData.customFields || []);
@@ -111,14 +170,25 @@ export default function PersonInput({ people, onSave, initialData = null, curren
   const addStepParent = () => {
     setParents(prev => ({
       ...prev,
-      others: [...prev.others, { id: '', role: 'Step-Parent', startYear: '', endYear: '' }]
+      others: [...prev.others, { id: '', role: '', startYear: '', endYear: '' }]
     }));
   };
 
   const updateStepParent = (index, field, value) => {
     const newOthers = [...parents.others];
     newOthers[index][field] = value;
-    setParents(prev => ({ ...prev, others: newOthers }));
+    
+    let updates = { others: newOthers };
+    if (field === 'role') {
+      const dobYear = formData.dob ? formData.dob.split('-')[0] : '';
+      if (value === 'Step Father') {
+        updates.primaryFatherStartYear = dobYear;
+      } else if (value === 'Step Mother') {
+        updates.primaryMotherStartYear = dobYear;
+      }
+    }
+    
+    setParents(prev => ({ ...prev, ...updates }));
   };
 
   const removeStepParent = (index) => {
@@ -155,6 +225,10 @@ export default function PersonInput({ people, onSave, initialData = null, curren
       parents: {
         primaryMother: parents.primaryMother.trim() || null,
         primaryFather: parents.primaryFather.trim() || null,
+        primaryMotherStartYear: parents.primaryMotherStartYear?.trim() || null,
+        primaryMotherEndYear: parents.primaryMotherEndYear?.trim() || null,
+        primaryFatherStartYear: parents.primaryFatherStartYear?.trim() || null,
+        primaryFatherEndYear: parents.primaryFatherEndYear?.trim() || null,
         others: validOthers
       },
       customFields: validCustomFields
@@ -212,7 +286,7 @@ export default function PersonInput({ people, onSave, initialData = null, curren
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginTop: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '16px', marginTop: '16px' }}>
           <div className="form-group">
             <label className="form-label">Gender</label>
             <select name="gender" className="form-control" value={formData.gender} onChange={handleChange}>
@@ -224,7 +298,7 @@ export default function PersonInput({ people, onSave, initialData = null, curren
           </div>
           <div className="form-group">
             <label className="form-label">Spouse ID</label>
-            <input type="text" name="spouse" className="form-control" value={formData.spouse} onChange={handleChange} placeholder="System ID of Spouse" />
+            <ParentIdInput value={formData.spouse} onChange={(val) => setFormData(prev => ({ ...prev, spouse: val }))} placeholder="System ID of Spouse" people={people} />
           </div>
           <div className="form-group">
             <label className="form-label">Spouse Start Date</label>
@@ -234,6 +308,15 @@ export default function PersonInput({ people, onSave, initialData = null, curren
             <label className="form-label">Address</label>
             <input type="text" name="address" className="form-control" value={formData.address} onChange={handleChange} placeholder="Current Location" />
           </div>
+          <div className="form-group">
+            <label className="form-label">Ancestral Village</label>
+            <input type="text" name="ancestralVillage" className="form-control" value={formData.ancestralVillage} onChange={handleChange} placeholder="Origin" />
+          </div>
+        </div>
+
+        <div className="form-group" style={{ marginTop: '16px' }}>
+          <label className="form-label">Notes</label>
+          <textarea name="notes" className="form-control" rows="3" value={formData.notes} onChange={handleChange} placeholder="Any additional information, life events, or background..."></textarea>
         </div>
 
         <hr style={{ border: 'none', borderTop: '1px solid rgba(0,0,0,0.1)', margin: '32px 0' }} />
@@ -245,11 +328,19 @@ export default function PersonInput({ people, onSave, initialData = null, curren
 
         <div className="form-group mb-4">
           <label className="form-label">Primary Mother ID</label>
-          <ParentIdInput value={parents.primaryMother} onChange={(val) => handleParentChange('primaryMother', val)} placeholder="e.g. aB3x9Yq2" />
+          <ParentIdInput value={parents.primaryMother} onChange={(val) => handleParentChange('primaryMother', val)} placeholder="e.g. aB3x9Yq2" people={people} />
+          <div className="d-flex gap-2 mt-2">
+            <input type="text" className="form-control" placeholder="Start Year (YYYY)" value={parents.primaryMotherStartYear} onChange={e => handleParentChange('primaryMotherStartYear', e.target.value)} style={{flex: 1}} />
+            <input type="text" className="form-control" placeholder="End Year (YYYY)" value={parents.primaryMotherEndYear} onChange={e => handleParentChange('primaryMotherEndYear', e.target.value)} style={{flex: 1}} />
+          </div>
         </div>
         <div className="form-group mb-4">
           <label className="form-label">Primary Father ID</label>
-          <ParentIdInput value={parents.primaryFather} onChange={(val) => handleParentChange('primaryFather', val)} placeholder="e.g. aB3x9Yq2" />
+          <ParentIdInput value={parents.primaryFather} onChange={(val) => handleParentChange('primaryFather', val)} placeholder="e.g. aB3x9Yq2" people={people} />
+          <div className="d-flex gap-2 mt-2">
+            <input type="text" className="form-control" placeholder="Start Year (YYYY)" value={parents.primaryFatherStartYear} onChange={e => handleParentChange('primaryFatherStartYear', e.target.value)} style={{flex: 1}} />
+            <input type="text" className="form-control" placeholder="End Year (YYYY)" value={parents.primaryFatherEndYear} onChange={e => handleParentChange('primaryFatherEndYear', e.target.value)} style={{flex: 1}} />
+          </div>
         </div>
 
         <div className="d-flex align-center justify-between mb-4">
@@ -263,11 +354,17 @@ export default function PersonInput({ people, onSave, initialData = null, curren
           <div key={index} className="dynamic-field-row" style={{ backgroundColor: 'rgba(0,0,0,0.02)', padding: '16px', borderRadius: '8px' }}>
             <div className="form-group" style={{ flex: 1.5 }}>
               <label className="form-label">Parent ID</label>
-              <ParentIdInput value={sp.id} onChange={(val) => updateStepParent(index, 'id', val)} placeholder="System ID" />
+              <ParentIdInput value={sp.id} onChange={(val) => updateStepParent(index, 'id', val)} placeholder="System ID" people={people} />
             </div>
             <div className="form-group" style={{ flex: 1 }}>
               <label className="form-label">Role</label>
-              <input type="text" className="form-control" value={sp.role} onChange={(e) => updateStepParent(index, 'role', e.target.value)} placeholder="e.g. Step-Mother" />
+              <select className="form-control" value={sp.role} onChange={(e) => updateStepParent(index, 'role', e.target.value)}>
+                <option value="">Select Role</option>
+                <option value="Step Father">Step Father</option>
+                <option value="Step Mother">Step Mother</option>
+                <option value="Adoptive Parent">Adoptive Parent</option>
+                <option value="Guardian">Guardian</option>
+              </select>
             </div>
             <div className="form-group" style={{ flex: 0.5 }}>
               <label className="form-label">Start Year</label>

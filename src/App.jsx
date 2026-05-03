@@ -105,7 +105,7 @@ function App() {
   };
 
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL}>
       <header className="app-bar">
         <div className="d-flex align-center gap-4">
           <div className="app-bar-brand">

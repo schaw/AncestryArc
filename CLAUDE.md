@@ -63,3 +63,11 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+## 5. UI and Visualization Learnings
+
+**Synchronize rendering and respect boundaries.**
+
+- **Always Check Default Boundaries First:** When working with visual libraries, charting tools, or UI components, explicitly check their default constraints (like minimum/maximum zoom limits or bounding boxes) before writing custom logic. A script cannot override a hardcoded library boundary.
+- **Complex UIs Require Orchestration:** Do not rely on simple "onLoad" triggers when data requires multi-step processing or layout calculation. Explicitly synchronize the camera/UI rendering with the completion of the calculation engine.
+- **Listen to Edge Symptoms:** Pay close attention to exactly what is failing (e.g., if a user cannot even *manually* interact with a view). This often points directly to container-level constraints rather than a flaw in the specific interaction logic.
