@@ -1,4 +1,4 @@
-# Family Lineage Web App
+# AncestryArc
 
 A modern, highly interactive, and visually stunning React application for mapping out massive family trees. Built with an emphasis on speed, scale, and dynamic relationships.
 

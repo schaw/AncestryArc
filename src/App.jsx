@@ -110,7 +110,7 @@ function App() {
         <div className="d-flex align-center gap-4">
           <div className="app-bar-brand">
             <Users color="var(--primary-color)" />
-            Lineage
+            AncestryArc
           </div>
           <Navigation />
         </div>
