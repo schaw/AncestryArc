@@ -30,7 +30,8 @@ A modern, highly interactive, and visually stunning React application for mappin
 The following features are planned for future development phases:
 
 - [ ] **Add Firebase for Authentication**: Replace the mock `currentUser` with real, persistent Google/Email authentication.
-- [ ] **Enable Public vs. Private Handling**: Allow users to keep certain sub-branches or specific fields entirely private and hidden from the public global web.
+- [ ] **Approvals & Notifications**: If someone claims to be related to you (parent, child, spouse), a notification allows you to validate/approve the link. Unapproved relationships display as dotted lines, and if rejected (unapproved by 2), they will not attach in the dashboard.
+- [ ] **Enable public vs. private handling**: Allow users to keep certain sub-branches or specific fields entirely private and hidden from the public global web.
 - [ ] **Enable Full Encryption**: Ensure sensitive personal data (DOB, Addresses) are encrypted at rest.
 - [ ] **Enable Quick Create using Text [DAG]**: Implement an AI or text-parser to instantly generate a family tree from a single paragraph of text (e.g., "John is married to Jane, they have a son Mark...").
 - [ ] **Best Picture Storage Options**: Integrate a dedicated blob storage (like AWS S3 or Firebase Storage) for avatar uploads rather than relying solely on external URLs.

@@ -125,7 +125,7 @@ function App() {
           <Route path="/" element={<Dashboard people={people} onUpdate={updatePerson} onDelete={deletePerson} currentUser={CURRENT_USER} />} />
           <Route path="/add" element={<PersonInput people={people} onSave={addPerson} currentUser={CURRENT_USER} />} />
           <Route path="/edit/:id" element={<EditPerson people={people} onUpdate={updatePerson} currentUser={CURRENT_USER} />} />
-          <Route path="/bulk" element={<BulkEntry onAddBulk={addPeopleBulk} currentUser={CURRENT_USER} />} />
+          <Route path="/bulk" element={<BulkEntry onAddBulk={addPeopleBulk} currentUser={CURRENT_USER} people={people} />} />
         </Routes>
       </main>
     </Router>

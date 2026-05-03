@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Undo2, Save, Copy, Check } from 'lucide-react';
+import { Trash2, Undo2, Save, Copy, Check, Search, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateUniqueId } from '../utils/generateId';
 
@@ -18,7 +18,73 @@ const createEmptyRow = (index) => ({
   otherAttributes: '' 
 });
 
-export default function BulkEntry({ onAddBulk, currentUser }) {
+const SearchableParentInput = ({ value, onChange, placeholder, people }) => {
+  const [showSearch, setShowSearch] = useState(false);
+  const [query, setQuery] = useState('');
+
+  const filtered = (people || []).filter(p => p.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
+
+  return (
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+      <input 
+        type="text" 
+        className="form-control" 
+        style={{ padding: '8px', minWidth: '120px', flex: 1, paddingRight: '28px' }} 
+        value={value} 
+        onChange={(e) => onChange(e.target.value)} 
+        placeholder={placeholder} 
+      />
+      <button 
+        type="button" 
+        className="btn btn-text" 
+        style={{ padding: '4px', position: 'absolute', right: '4px' }}
+        onClick={() => { setShowSearch(!showSearch); setQuery(''); }}
+        title="Search Person"
+      >
+        <Search size={14} color="var(--primary-color)" />
+      </button>
+
+      {showSearch && (
+        <div style={{ 
+          position: 'absolute', top: '100%', left: 0, width: '250px', backgroundColor: 'var(--surface-color)', 
+          boxShadow: 'var(--elevation-3)', borderRadius: '8px', zIndex: 100, padding: '8px'
+        }}>
+          <div className="d-flex align-center gap-2 mb-2">
+            <input 
+              autoFocus
+              type="text" 
+              className="form-control" 
+              placeholder="Search name..." 
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              style={{ flex: 1, padding: '4px 8px' }}
+            />
+            <button className="btn btn-text" onClick={() => setShowSearch(false)} style={{ padding: '4px' }}>
+              <X size={14} />
+            </button>
+          </div>
+          {query && filtered.map(p => (
+            <div 
+              key={p.id} 
+              style={{ padding: '8px', cursor: 'pointer', borderBottom: '1px solid rgba(0,0,0,0.05)', fontSize: '0.8rem' }}
+              onClick={() => { onChange(p.id); setShowSearch(false); }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(98,0,234,0.05)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <div style={{ fontWeight: 'bold' }}>{p.name}</div>
+              <div style={{ color: 'var(--text-secondary)' }}>ID: {p.id}</div>
+            </div>
+          ))}
+          {query && filtered.length === 0 && (
+             <div style={{ padding: '8px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No matches</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default function BulkEntry({ onAddBulk, currentUser, people }) {
   const navigate = useNavigate();
   const [rows, setRows] = useState(() => Array.from({ length: 20 }, (_, i) => createEmptyRow(i)));
   const [deletedRow, setDeletedRow] = useState(null);
@@ -178,10 +244,10 @@ export default function BulkEntry({ onAddBulk, currentUser }) {
                     <input type="text" className="form-control" style={inputStyle} value={row.name} onChange={(e) => handleInputChange(row.tempId, 'name', e.target.value)} placeholder="Full Name" />
                   </td>
                   <td style={{ padding: '12px 16px' }}>
-                    <input type="text" className="form-control" style={inputStyle} value={row.primaryMother} onChange={(e) => handleInputChange(row.tempId, 'primaryMother', e.target.value)} placeholder="ID or Temp ID" />
+                    <SearchableParentInput value={row.primaryMother} onChange={(val) => handleInputChange(row.tempId, 'primaryMother', val)} placeholder="ID or Temp ID" people={people} />
                   </td>
                   <td style={{ padding: '12px 16px' }}>
-                    <input type="text" className="form-control" style={inputStyle} value={row.primaryFather} onChange={(e) => handleInputChange(row.tempId, 'primaryFather', e.target.value)} placeholder="ID or Temp ID" />
+                    <SearchableParentInput value={row.primaryFather} onChange={(val) => handleInputChange(row.tempId, 'primaryFather', val)} placeholder="ID or Temp ID" people={people} />
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <input type="date" className="form-control" style={inputStyle} value={row.dob} onChange={(e) => handleInputChange(row.tempId, 'dob', e.target.value)} />
