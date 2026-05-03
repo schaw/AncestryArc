@@ -224,17 +224,31 @@ export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpd
           addLink(other.id, p.id, true);
         });
       }
+    });
 
+    // Pass 2: Add pink dashed unions for explicit spouses that don't have children yet
+    subsetPeople.forEach(p => {
       if (p.spouse && relatedIds.has(p.spouse.trim())) {
         const spouseId = p.spouse.trim();
-        const edgeId = `e-spouse-${[p.id, spouseId].sort().join('-')}`;
-        if (!initialEdges.some(e => e.id === edgeId)) {
-          initialEdges.push({
-            id: edgeId,
-            source: p.id,
-            target: spouseId,
-            type: 'straight',
-            style: { stroke: '#ff4081', strokeWidth: 2, strokeDasharray: '5,5' }
+        const unionId = `u-${[p.id, spouseId].sort().join('-')}`;
+        
+        if (!unionNodes[unionId]) {
+          unionNodes[unionId] = true;
+          initialNodes.push({ id: unionId, type: 'union', data: {}, position: { x: 0, y: 0 } });
+          
+          initialEdges.push({ 
+            id: `e-spouse-${p.id}-${unionId}`, 
+            source: p.id, 
+            target: unionId, 
+            type: 'smoothstep', 
+            style: { stroke: '#ff4081', strokeWidth: 2, strokeDasharray: '5,5' } 
+          });
+          initialEdges.push({ 
+            id: `e-spouse-${spouseId}-${unionId}`, 
+            source: spouseId, 
+            target: unionId, 
+            type: 'smoothstep', 
+            style: { stroke: '#ff4081', strokeWidth: 2, strokeDasharray: '5,5' } 
           });
         }
       }
