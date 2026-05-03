@@ -1,0 +1,256 @@
+:root {
+  --primary-color: #6200ea;
+  --primary-variant: #3700b3;
+  --secondary-color: #03dac6;
+  --background-color: #f8f9fa;
+  --surface-color: #ffffff;
+  --error-color: #b00020;
+  
+  --on-primary: #ffffff;
+  --on-secondary: #000000;
+  --on-background: #212121;
+  --on-surface: #212121;
+  --on-error: #ffffff;
+  
+  --text-primary: rgba(0, 0, 0, 0.87);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --text-hint: rgba(0, 0, 0, 0.38);
+
+  --font-family: 'Roboto', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --border-radius: 12px;
+  --elevation-1: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  --elevation-2: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+  --elevation-3: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+  --transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary-color: #bb86fc;
+    --primary-variant: #3700b3;
+    --secondary-color: #03dac6;
+    --background-color: #121212;
+    --surface-color: #1e1e1e;
+    --error-color: #cf6679;
+
+    --on-primary: #000000;
+    --on-background: #ffffff;
+    --on-surface: #ffffff;
+
+    --text-primary: rgba(255, 255, 255, 0.87);
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --text-hint: rgba(255, 255, 255, 0.38);
+    
+    --elevation-1: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.7);
+    --elevation-2: 0 3px 6px rgba(0,0,0,0.5), 0 3px 6px rgba(0,0,0,0.7);
+  }
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--background-color);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Material App Bar */
+.app-bar {
+  background-color: var(--surface-color);
+  color: var(--on-surface);
+  box-shadow: var(--elevation-1);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.app-bar-brand {
+  font-size: 1.25rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-bar-nav {
+  display: flex;
+  gap: 16px;
+}
+
+.app-bar-nav a {
+  color: var(--text-secondary);
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+}
+
+.app-bar-nav a:hover, .app-bar-nav a.active {
+  background-color: rgba(98, 0, 234, 0.08);
+  color: var(--primary-color);
+}
+
+/* Material Card */
+.card {
+  background-color: var(--surface-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--elevation-1);
+  padding: 24px;
+  margin-bottom: 24px;
+  transition: var(--transition);
+}
+
+.card:hover {
+  box-shadow: var(--elevation-2);
+}
+
+/* Forms */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background-color: var(--background-color);
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+}
+
+@media (prefers-color-scheme: dark) {
+  .form-control {
+    border-color: rgba(255,255,255,0.12);
+  }
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(98, 0, 234, 0.2);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 24px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: var(--on-primary);
+  box-shadow: var(--elevation-1);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-variant);
+  box-shadow: var(--elevation-2);
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--primary-color);
+  border: 1px solid rgba(98, 0, 234, 0.5);
+}
+
+.btn-outline:hover {
+  background-color: rgba(98, 0, 234, 0.08);
+}
+
+.btn-text {
+  background-color: transparent;
+  color: var(--primary-color);
+  padding: 10px 16px;
+  box-shadow: none;
+}
+
+.btn-text:hover {
+  background-color: rgba(98, 0, 234, 0.08);
+}
+
+/* Utilities */
+.d-flex { display: flex; }
+.align-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 8px; }
+.gap-4 { gap: 16px; }
+.mt-4 { margin-top: 16px; }
+.mb-4 { margin-bottom: 16px; }
+
+/* Dynamic Fields */
+.dynamic-field-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+
+.dynamic-field-row .form-group {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+/* Switch (Checkbox) */
+.switch-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.switch-label input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary-color);
+}
