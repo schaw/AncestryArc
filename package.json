@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "deploy:firebase": "npm run build -- --base=/ && firebase deploy --only hosting:family-arc"
   },
   "dependencies": {
     "@xyflow/react": "^12.10.2",
