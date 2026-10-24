@@ -77,6 +77,13 @@
 - [x] **Default 39-Member Village Dataset Bundled**:
   - Embedded `defaultFamilyData.json` into the repository so fresh deployments on GitHub Pages or new devices load all 39 records by default.
   - Added one-click JSON backup export and restore file upload to the dashboard.
+  - Implemented automatic upgrade detection for users whose browsers held legacy 3-member mock cache.
+- [x] **Firebase Integration & Google Sign-In**:
+  - Installed and configured `@firebase` SDK with Auth and Cloud Firestore.
+  - Added `AuthProvider` with Google popup sign-in, user profile badge, and cloud synchronization status.
+  - Built real-time Firestore synchronization (`subscribeToFamilyLineage`, `savePersonToFirestore`, `deletePersonFromFirestore`, `uploadFullTreeToFirestore`).
+- [x] **Automated GitHub Actions Deployment**:
+  - Created `.github/workflows/deploy.yml` to automatically build and deploy `master` commits to GitHub Pages on every push.
 
 ---
 
