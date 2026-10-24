@@ -82,8 +82,17 @@
   - Installed and configured `@firebase` SDK with Auth and Cloud Firestore.
   - Added `AuthProvider` with Google popup sign-in, user profile badge, and cloud synchronization status.
   - Built real-time Firestore synchronization (`subscribeToFamilyLineage`, `savePersonToFirestore`, `deletePersonFromFirestore`, `uploadFullTreeToFirestore`).
+- [x] **Public Initials Privacy Masking (Option A Firestore Rules)**:
+  - For public/unauthenticated viewers, nodes only render initials (e.g., "A. L.", "R. P. K.") across both **Global Web** and **Full Lineage Tree**.
+  - Concealed private photos, birth years, ancestral villages, addresses, phone numbers, and notes from public viewers.
+  - Friendly Google Sign-In banners in floating hover cards, side panel, search dropdown, quick add, and bulk spreadsheet.
+  - Export (CSV/JSON) and write actions are restricted to authenticated users.
+- [x] **Canvas Ergonomics & Outside Click Navigation**:
+  - Clicking empty canvas space zooms back out to fit the full tree and collapses the right editing side panel.
+  - Elimination of the generic "Lineage Member" subtitle fallback; preferred Display Name everywhere.
 - [x] **Automated GitHub Actions Deployment**:
   - Created `.github/workflows/deploy.yml` to automatically build and deploy `master` commits to GitHub Pages on every push.
+  - Live deployed at `https://schaw.github.io/AncestryArc/` and configured for Firebase Hosting `https://family-arc.web.app/`.
 
 ---
 
