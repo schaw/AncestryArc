@@ -63,6 +63,17 @@
   - Replaced the screen-eating vertical stat cards with a sleek, horizontal toolbar and minimalist stats pill (`39 Members • 6 Generations • 46 Connections`).
   - Added a one-click **"Maximize Flow" / Fullscreen** toggle button (`Maximize2` / `Minimize2` or `Esc`) that expands the graph to full 100vw × 100vh canvas mode.
   - Resolved flex-column layout issue where the canvas was being squeezed into a narrow right-side sliver.
+- [x] **Display Name & Nick Name Support**:
+  - Added dedicated `displayName` and `nickname` properties across all models (`PersonInput`, `SidePanelEdit`, `BulkEntry`, graph nodes, CSV, and JSON exports).
+- [x] **Legible Lineage Tree Cards**:
+  - Replaced microscopic 50px circles with structured **160px × 56px genealogical cards** displaying bold primary names and subtitle tags for nicknames/birth years.
+  - Reduced `fitView` padding from `0.5` to `0.12` with scale compensation for instant readability without zooming.
+- [x] **Global Web Canvas Overhaul & Instant Hover Cards**:
+  - Enforced finite-coordinate guard clauses in `drawNode` to eliminate initial-tick canvas crashes.
+  - Replaced sluggish browser tooltips with a zero-latency floating HTML hover card and direct-on-canvas legible labels.
+- [x] **Default 39-Member Village Dataset Bundled**:
+  - Embedded `defaultFamilyData.json` into the repository so fresh deployments on GitHub Pages or new devices load all 39 records by default.
+  - Added one-click JSON backup export and restore file upload to the dashboard.
 
 ---
 
