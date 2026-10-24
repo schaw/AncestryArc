@@ -85,6 +85,7 @@ const ParentIdInput = ({ value, onChange, disabled, placeholder, people }) => {
 export default function SidePanelEdit({ person, people = [], onSave, onDiscard, onDelete, currentUser }) {
   const isOwner = person.createdBy === currentUser;
   const [copiedId, setCopiedId] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(formData.id);
@@ -94,7 +95,7 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
 
   const [saveStatus, setSaveStatus] = useState(null);
   const [formData, setFormData] = useState({
-    id: '', name: '', dob: '', height: '', race: '', gender: '', spouse: '', spouseStartDate: '', address: '', ancestralVillage: '', notes: '', isPublic: true,
+    id: '', name: '', displayName: '', nickname: '', dob: '', height: '', race: '', gender: '', spouse: '', spouseStartDate: '', address: '', ancestralVillage: '', notes: '', isPublic: true,
   });
 
   const [parents, setParents] = useState({
@@ -110,6 +111,8 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
       setFormData({
         id: person.id,
         name: person.name || '',
+        displayName: person.displayName || '',
+        nickname: person.nickname || '',
         dob: person.dob || '',
         height: person.height || '',
         race: person.race || '',
@@ -287,6 +290,17 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
         <input type="text" name="name" className="form-control" value={formData.name} onChange={handleChange} disabled={!isOwner} />
       </div>
 
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div className="form-group">
+          <label className="form-label">Display Name</label>
+          <input type="text" name="displayName" className="form-control" placeholder="Short name" value={formData.displayName} onChange={handleChange} disabled={!isOwner} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Nick Name</label>
+          <input type="text" name="nickname" className="form-control" placeholder="Pet name" value={formData.nickname} onChange={handleChange} disabled={!isOwner} />
+        </div>
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         <div className="form-group">
           <label className="form-label">DOB</label>
@@ -398,16 +412,49 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
       ))}
 
       {isOwner && (
-        <div className="d-flex align-center justify-between mt-4 pt-4" style={{ borderTop: '1px solid rgba(0,0,0,0.1)' }}>
-          <button onClick={() => onDelete(person.id)} className="btn btn-outline" style={{ color: 'var(--error-color)', borderColor: 'var(--error-color)' }}>
-            Delete
-          </button>
-          <div className="d-flex gap-2">
-            <button onClick={onDiscard} className="btn btn-text">Discard</button>
-            <button onClick={handleSave} className="btn btn-primary" disabled={saveStatus === 'saving' || saveStatus === 'saved'}>
-              {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? <><Check size={16} /> Saved!</> : <><Save size={16} /> Save</>}
-            </button>
-          </div>
+        <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-color)' }}>
+          {showDeleteConfirm ? (
+            <div style={{ background: 'rgba(239, 68, 68, 0.08)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+              <p style={{ margin: '0 0 10px', fontSize: '0.85rem', color: 'var(--error-color)', fontWeight: 600 }}>
+                Are you sure? This will delete this person from the family tree.
+              </p>
+              <div className="d-flex gap-2 justify-between">
+                <button 
+                  type="button" 
+                  onClick={() => setShowDeleteConfirm(false)} 
+                  className="btn btn-text" 
+                  style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => onDelete(person.id)} 
+                  className="btn" 
+                  style={{ background: 'var(--error-color)', color: '#fff', padding: '6px 14px', fontSize: '0.8rem' }}
+                >
+                  Confirm Delete
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="d-flex align-center justify-between">
+              <button 
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)} 
+                className="btn btn-outline" 
+                style={{ color: 'var(--error-color)', borderColor: 'rgba(239, 68, 68, 0.4)', padding: '8px 14px', fontSize: '0.8rem' }}
+              >
+                Delete
+              </button>
+              <div className="d-flex gap-2">
+                <button type="button" onClick={onDiscard} className="btn btn-text" style={{ padding: '8px 14px', fontSize: '0.8rem' }}>Discard</button>
+                <button type="button" onClick={handleSave} className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.8rem' }} disabled={saveStatus === 'saving' || saveStatus === 'saved'}>
+                  {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? <><Check size={16} /> Saved!</> : <><Save size={16} /> Save</>}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

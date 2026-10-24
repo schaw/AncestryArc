@@ -1,47 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Users, UserPlus, Table, UserCircle } from 'lucide-react';
+import { Users, UserPlus, Table, UserCircle, Moon, Sun } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import Dashboard from './components/Dashboard';
 import PersonInput from './components/PersonInput';
 import BulkEntry from './components/BulkEntry';
 import EditPerson from './components/EditPerson';
+import defaultFamilyData from './data/defaultFamilyData.json';
 
 const CURRENT_USER = 'keshavkarn';
 
-// Mock initial data with explicit System IDs
-const initialLineage = [
-  {
-    id: 'a1B2c3D4',
-    name: 'John Doe',
-    dob: '1960-05-15',
-    isPublic: true,
-    createdBy: CURRENT_USER,
-    parents: { primaryMother: null, primaryFather: null, others: [] },
-    customFields: []
-  },
-  {
-    id: 'e5F6g7H8',
-    name: 'Jane Smith',
-    dob: '1962-08-22',
-    isPublic: true,
-    createdBy: CURRENT_USER,
-    parents: { primaryMother: null, primaryFather: null, others: [] },
-    customFields: []
-  },
-  {
-    id: 'i9J0k1L2',
-    name: 'Michael Doe',
-    dob: '1988-11-03',
-    isPublic: true,
-    createdBy: CURRENT_USER,
-    parents: { 
-      primaryMother: 'e5F6g7H8', 
-      primaryFather: 'a1B2c3D4', 
-      others: [] 
-    },
-    customFields: []
-  }
-];
+// Mock initial data populated with default 39-member village dataset
+const initialLineage = defaultFamilyData;
 
 function Navigation() {
   const location = useLocation();
@@ -50,23 +20,53 @@ function Navigation() {
     <nav className="app-bar-nav">
       <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
         <div className="d-flex align-center gap-2">
-          <Users size={18} />
+          <Users size={16} />
           <span>Dashboard</span>
         </div>
       </Link>
       <Link to="/add" className={location.pathname === '/add' ? 'active' : ''}>
         <div className="d-flex align-center gap-2">
-          <UserPlus size={18} />
+          <UserPlus size={16} />
           <span>Add Person</span>
         </div>
       </Link>
       <Link to="/bulk" className={location.pathname === '/bulk' ? 'active' : ''}>
         <div className="d-flex align-center gap-2">
-          <Table size={18} />
+          <Table size={16} />
           <span>Bulk Entry</span>
         </div>
       </Link>
     </nav>
+  );
+}
+
+const pageVariants = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 }
+};
+
+function AnimatedRoutes({ people, addPerson, updatePerson, deletePerson, addPeopleBulk, onImportPeople }) {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        variants={pageVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+      >
+        <Routes location={location}>
+          <Route path="/" element={<Dashboard people={people} onUpdate={updatePerson} onDelete={deletePerson} onImportPeople={onImportPeople} currentUser={CURRENT_USER} />} />
+          <Route path="/add" element={<PersonInput people={people} onSave={addPerson} currentUser={CURRENT_USER} />} />
+          <Route path="/edit/:id" element={<EditPerson people={people} onUpdate={updatePerson} currentUser={CURRENT_USER} />} />
+          <Route path="/bulk" element={<BulkEntry onAddBulk={addPeopleBulk} currentUser={CURRENT_USER} people={people} />} />
+        </Routes>
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
@@ -108,25 +108,31 @@ function App() {
     <Router basename={import.meta.env.BASE_URL}>
       <header className="app-bar">
         <div className="d-flex align-center gap-4">
-          <div className="app-bar-brand">
-            <Users color="var(--primary-color)" />
-            AncestryArc
-          </div>
+          <Link to="/" style={{ textDecoration: 'none' }}>
+            <div className="app-bar-brand">
+              <Users color="var(--primary-color)" size={22} />
+              AncestryArc
+            </div>
+          </Link>
           <Navigation />
         </div>
-        <div className="d-flex align-center gap-2" style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-          <UserCircle size={18} />
-          Logged in as <strong>{CURRENT_USER}</strong>
+        <div className="d-flex align-center gap-3">
+          <div className="d-flex align-center gap-2" style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', padding: '6px 14px', borderRadius: '10px', background: 'var(--primary-light)' }}>
+            <UserCircle size={16} color="var(--primary-color)" />
+            <span style={{ fontWeight: 500 }}>{CURRENT_USER}</span>
+          </div>
         </div>
       </header>
 
-      <main className="container" style={{ maxWidth: '100%', padding: '0 16px' }}>
-        <Routes>
-          <Route path="/" element={<Dashboard people={people} onUpdate={updatePerson} onDelete={deletePerson} currentUser={CURRENT_USER} />} />
-          <Route path="/add" element={<PersonInput people={people} onSave={addPerson} currentUser={CURRENT_USER} />} />
-          <Route path="/edit/:id" element={<EditPerson people={people} onUpdate={updatePerson} currentUser={CURRENT_USER} />} />
-          <Route path="/bulk" element={<BulkEntry onAddBulk={addPeopleBulk} currentUser={CURRENT_USER} people={people} />} />
-        </Routes>
+      <main style={{ maxWidth: '100%', padding: '20px 24px' }}>
+        <AnimatedRoutes
+          people={people}
+          addPerson={addPerson}
+          updatePerson={updatePerson}
+          deletePerson={deletePerson}
+          addPeopleBulk={addPeopleBulk}
+          onImportPeople={setPeople}
+        />
       </main>
     </Router>
   );

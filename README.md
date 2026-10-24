@@ -25,6 +25,10 @@ A modern, highly interactive, and visually stunning React application for mappin
    ```
 4. **Open in Browser**: Navigate to `http://localhost:5173`.
 
+## Master Project Log & Architectural Roadmap
+For complete project logs, ongoing concept designs, scale architecture, and the upgrade history, see:
+👉 **[PROJECT_LOG.md](PROJECT_LOG.md)**
+
 ## Upcoming Roadmap & Next Steps
 
 The following features are planned for future development phases:

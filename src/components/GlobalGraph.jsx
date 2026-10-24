@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
+import { User, Users, MapPin, Calendar, Sparkles } from 'lucide-react';
 
 const getInitials = (name) => {
   if (!name) return '?';
@@ -10,27 +11,40 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
   const containerRef = useRef();
   const graphRef = useRef();
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const [isDark, setIsDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const [hoveredNode, setHoveredNode] = useState(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    if (containerRef.current) {
-      setDimensions({
-        width: containerRef.current.clientWidth,
-        height: containerRef.current.clientHeight || 600
-      });
-    }
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e) => setIsDark(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        setDimensions({
+          width: containerRef.current.clientWidth,
+          height: containerRef.current.clientHeight || 600
+        });
+      }
+    };
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
   }, []);
 
   useEffect(() => {
     if (graphRef.current) {
-      // Adjust forces based on viewMode
       if (viewMode === 'web') {
-        // Strong repulsion to untangle intersecting lines
-        graphRef.current.d3Force('charge').strength(-300);
-        // Larger distance to give nodes room to breathe
-        graphRef.current.d3Force('link').distance(50);
+        // Strong repulsion to spread nodes out with ample breathing room
+        graphRef.current.d3Force('charge').strength(-500);
+        graphRef.current.d3Force('link').distance(80);
       } else {
-        graphRef.current.d3Force('charge').strength(-150);
-        graphRef.current.d3Force('link').distance(40);
+        graphRef.current.d3Force('charge').strength(-250);
+        graphRef.current.d3Force('link').distance(55);
       }
     }
   }, [people, viewMode]);
@@ -53,13 +67,20 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
         img.src = imgField.value;
       }
 
+      const displayLabel = p.displayName || p.name;
+
       return {
         id: p.id,
         name: p.name,
-        initials: getInitials(p.name),
+        displayName: p.displayName,
+        nickname: p.nickname,
+        displayLabel,
+        dob: p.dob,
+        ancestralVillage: p.ancestralVillage,
+        initials: getInitials(displayLabel),
         img: img,
         childrenCount: getChildrenCount(p.id),
-        val: 1
+        val: 1.5
       };
     });
 
@@ -99,89 +120,233 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
   const drawNode = (node, ctx, globalScale) => {
     if (node.isUnion) {
       ctx.beginPath();
-      ctx.arc(node.x, node.y, 2, 0, 2 * Math.PI, false);
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.arc(node.x, node.y, 3, 0, 2 * Math.PI, false);
+      ctx.fillStyle = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)';
       ctx.fill();
       return;
     }
 
-    const size = 12; // Base radius of the node
+    // Increased base size from 12 to 18 for high visibility and easy hovering
+    const size = 18;
     
+    // Draw subtle glow if hovered
+    const isHovered = hoveredNode && hoveredNode.id === node.id;
+    if (isHovered) {
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, size + 5, 0, 2 * Math.PI, false);
+      ctx.fillStyle = isDark ? 'rgba(167, 139, 250, 0.4)' : 'rgba(124, 58, 237, 0.25)';
+      ctx.fill();
+    }
+
     ctx.save();
     ctx.beginPath();
     ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
     ctx.closePath();
-    ctx.clip(); // Clip everything to a circle
+    ctx.clip();
 
     if (node.img && node.img.complete) {
-      // Draw the user's image
       ctx.drawImage(node.img, node.x - size, node.y - size, size * 2, size * 2);
     } else {
-      // Draw background circle for initials
-      ctx.fillStyle = '#6200ea'; // var(--primary-color) fallback
+      // Sleek gradient background
+      const grad = ctx.createLinearGradient(node.x - size, node.y - size, node.x + size, node.y + size);
+      grad.addColorStop(0, '#7c3aed');
+      grad.addColorStop(1, '#4f46e5');
+      ctx.fillStyle = grad;
       ctx.fill();
       
-      // Draw initials text
-      ctx.fillStyle = '#ffffff'; // var(--on-primary) fallback
-      const fontSize = 10;
-      ctx.font = `${fontSize}px Inter, system-ui, sans-serif`;
+      // Initials
+      ctx.fillStyle = '#ffffff';
+      const fontSize = 12;
+      ctx.font = `bold ${fontSize}px Inter, system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(node.initials, node.x, node.y + 1); // +1 tweak for visual vertical alignment
+      ctx.fillText(node.initials, node.x, node.y + 0.5);
     }
     
     ctx.restore();
     
-    // Draw stroke around the circle to make it pop
+    // Stroke ring
     ctx.beginPath();
     ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
-    ctx.strokeStyle = '#6200ea';
-    ctx.lineWidth = 1.5 / globalScale;
+    ctx.strokeStyle = isHovered ? '#f472b6' : (isDark ? '#a78bfa' : '#7c3aed');
+    ctx.lineWidth = (isHovered ? 2.5 : 1.8) / globalScale;
     ctx.stroke();
 
+    // Children count badge
     if (node.childrenCount > 0) {
-      const badgeRadius = 4;
+      const badgeRadius = 5.5;
       const badgeX = node.x + size * 0.707;
       const badgeY = node.y - size * 0.707;
       
       ctx.beginPath();
       ctx.arc(badgeX, badgeY, badgeRadius, 0, 2 * Math.PI, false);
-      ctx.fillStyle = '#ff4081';
+      ctx.fillStyle = '#f472b6';
       ctx.fill();
       
-      ctx.fillStyle = '#fff';
-      ctx.font = `${badgeRadius * 1.5}px Inter, system-ui, sans-serif`;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1 / globalScale;
+      ctx.stroke();
+      
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${badgeRadius * 1.4}px Inter, system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(node.childrenCount.toString(), badgeX, badgeY + 0.5);
     }
+
+    // Direct Canvas Name Label (Always legible)
+    const label = node.displayName || node.name;
+    const labelFontSize = Math.max(9, 11 / Math.sqrt(globalScale));
+    ctx.font = `600 ${labelFontSize}px Inter, system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+
+    // Label background pill
+    const textWidth = ctx.measureText(label).width;
+    const paddingX = 4;
+    const pillY = node.y + size + 4;
+    ctx.fillStyle = isDark ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.88)';
+    ctx.fillRect(node.x - textWidth / 2 - paddingX, pillY - 1, textWidth + paddingX * 2, labelFontSize + 3);
+
+    // Label text
+    ctx.fillStyle = isDark ? '#f1f5f9' : '#1e293b';
+    ctx.fillText(label, node.x, pillY);
+
+    // Nickname if present
+    if (node.nickname) {
+      const nickText = `(${node.nickname})`;
+      const nickFontSize = Math.max(8, 9 / Math.sqrt(globalScale));
+      ctx.font = `500 ${nickFontSize}px Inter, system-ui, sans-serif`;
+      ctx.fillStyle = isDark ? '#a78bfa' : '#7c3aed';
+      ctx.fillText(nickText, node.x, pillY + labelFontSize + 3);
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setMousePos({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    }
   };
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height: 'calc(100vh - 150px)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '12px', overflow: 'hidden' }}>
+    <div 
+      ref={containerRef} 
+      onMouseMove={handleMouseMove}
+      style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}
+    >
       <ForceGraph2D
         ref={graphRef}
         width={dimensions.width}
         height={dimensions.height}
         graphData={graphData}
         dagMode={viewMode === 'generational' ? 'td' : viewMode === 'radial' ? 'radialout' : null}
-        dagLevelDistance={viewMode === 'generational' ? 80 : viewMode === 'radial' ? 100 : null}
-        nodeLabel={(node) => node.isUnion ? '' : node.name}
+        dagLevelDistance={viewMode === 'generational' ? 100 : viewMode === 'radial' ? 120 : null}
         nodeCanvasObject={drawNode}
-        nodeRelSize={6}
-        linkDirectionalArrowLength={3.5}
+        nodeRelSize={9}
+        linkDirectionalArrowLength={4}
         linkDirectionalArrowRelPos={1}
-        linkLineDash={link => link.type === 'dotted' ? [2, 2] : null}
-        linkColor={link => link.type === 'dotted' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.8)'}
+        linkLineDash={link => link.type === 'dotted' ? [3, 3] : null}
+        linkColor={link => link.type === 'dotted' ? (isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.3)') : (isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.65)')}
+        onNodeHover={(node) => {
+          if (node && !node.isUnion) {
+            setHoveredNode(node);
+          } else {
+            setHoveredNode(null);
+          }
+        }}
         onNodeClick={node => {
           if (!node.isUnion) onNodeClick(node.id);
         }}
-        backgroundColor="var(--surface-color)"
-        cooldownTicks={40}
+        backgroundColor={isDark ? '#0f172a' : '#f8fafc'}
+        cooldownTicks={50}
         onEngineStop={() => {
-          if (graphRef.current) graphRef.current.zoomToFit(200, 120);
+          // Balanced zoom-to-fit: padding 35 prevents excessive zoom-out
+          if (graphRef.current) graphRef.current.zoomToFit(300, 35);
         }}
       />
+
+      {/* Zero-Latency Instant Floating Hover Card */}
+      {hoveredNode && (
+        <div
+          style={{
+            position: 'absolute',
+            left: Math.min(mousePos.x + 16, dimensions.width - 240),
+            top: Math.min(mousePos.y + 16, dimensions.height - 180),
+            pointerEvents: 'none',
+            background: 'var(--surface-glass)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderRadius: '14px',
+            border: '1.5px solid var(--border-color)',
+            boxShadow: 'var(--elevation-3)',
+            padding: '12px 16px',
+            minWidth: '220px',
+            maxWidth: '280px',
+            zIndex: 100,
+            animation: 'fadeIn 0.15s ease-out'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+            <div style={{ 
+              width: '28px', 
+              height: '28px', 
+              borderRadius: '50%', 
+              background: 'var(--gradient-primary)', 
+              color: '#fff', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              fontSize: '11px',
+              fontWeight: 700 
+            }}>
+              {hoveredNode.initials}
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                {hoveredNode.displayName || hoveredNode.name}
+              </div>
+              {hoveredNode.nickname && (
+                <div style={{ fontSize: '0.78rem', color: 'var(--primary-color)', fontWeight: 600 }}>
+                  "{hoveredNode.nickname}"
+                </div>
+              )}
+            </div>
+          </div>
+
+          {hoveredNode.displayName && hoveredNode.displayName !== hoveredNode.name && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+              Full: {hoveredNode.name}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
+            {hoveredNode.dob && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Calendar size={13} color="var(--primary-color)" />
+                <span>Born: {hoveredNode.dob}</span>
+              </div>
+            )}
+            {hoveredNode.ancestralVillage && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <MapPin size={13} color="var(--secondary-color)" />
+                <span>Village: {hoveredNode.ancestralVillage}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Users size={13} color="var(--accent-color)" />
+              <span>{hoveredNode.childrenCount} {hoveredNode.childrenCount === 1 ? 'Child' : 'Children'}</span>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '8px', fontSize: '0.7rem', color: 'var(--text-hint)', fontStyle: 'italic', textAlign: 'center' }}>
+            Click node to focus lineage tree
+          </div>
+        </div>
+      )}
     </div>
   );
 }

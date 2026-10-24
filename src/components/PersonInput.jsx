@@ -98,6 +98,8 @@ export default function PersonInput({ people, onSave, initialData = null, curren
   const [formData, setFormData] = useState({
     id: '',
     name: '',
+    displayName: '',
+    nickname: '',
     dob: '',
     height: '',
     race: '',
@@ -129,6 +131,8 @@ export default function PersonInput({ people, onSave, initialData = null, curren
       setFormData({
         id: initialData.id,
         name: initialData.name || '',
+        displayName: initialData.displayName || '',
+        nickname: initialData.nickname || '',
         dob: initialData.dob || '',
         height: initialData.height || '',
         race: initialData.race || '',
@@ -264,10 +268,20 @@ export default function PersonInput({ people, onSave, initialData = null, curren
       </div>
       
       <form onSubmit={handleSubmit}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-            <label className="form-label">Full Name *</label>
-            <input type="text" name="name" className="form-control" value={formData.name} onChange={handleChange} required />
+            <label className="form-label">Full Legal Name *</label>
+            <input type="text" name="name" className="form-control" value={formData.name} onChange={handleChange} required placeholder="Full Name" />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Display Name (Short / Preferred)</label>
+            <input type="text" name="displayName" className="form-control" value={formData.displayName} onChange={handleChange} placeholder="e.g. Rameshwar Karn" />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Nick Name / Pet Name</label>
+            <input type="text" name="nickname" className="form-control" value={formData.nickname} onChange={handleChange} placeholder="e.g. Chhotu" />
           </div>
 
           <div className="form-group">
@@ -286,7 +300,7 @@ export default function PersonInput({ people, onSave, initialData = null, curren
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '16px', marginTop: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: '16px' }}>
           <div className="form-group">
             <label className="form-label">Gender</label>
             <select name="gender" className="form-control" value={formData.gender} onChange={handleChange}>

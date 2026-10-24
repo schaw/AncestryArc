@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import PersonInput from './PersonInput';
 
-export default function EditPerson({ people, onUpdate }) {
+export default function EditPerson({ people, onUpdate, currentUser }) {
   const { id } = useParams();
   
   const person = people.find(p => p.id === id);
@@ -12,7 +12,7 @@ export default function EditPerson({ people, onUpdate }) {
   }
 
   // Security check: Only allow edit if currentUser created it
-  if (person.createdBy !== 'currentUser') {
+  if (person.createdBy !== currentUser) {
     return (
       <div className="card" style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
         <h2 style={{ color: 'var(--error-color)' }}>Access Denied</h2>
@@ -21,5 +21,5 @@ export default function EditPerson({ people, onUpdate }) {
     );
   }
 
-  return <PersonInput people={people} onSave={onUpdate} initialData={person} />;
+  return <PersonInput people={people} onSave={onUpdate} initialData={person} currentUser={currentUser} />;
 }

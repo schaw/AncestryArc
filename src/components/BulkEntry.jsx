@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Undo2, Save, Copy, Check, Search, X } from 'lucide-react';
+import { Trash2, Undo2, Save, Copy, Check, Search, X, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateUniqueId } from '../utils/generateId';
 
 const createEmptyRow = (index) => ({
   tempId: `#T${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
   name: '',
+  displayName: '',
+  nickname: '',
   dob: '',
   height: '',
   race: '',
@@ -166,6 +168,8 @@ export default function BulkEntry({ onAddBulk, currentUser, people }) {
       return {
         id: r.realId,
         name: r.name,
+        displayName: r.displayName?.trim() || '',
+        nickname: r.nickname?.trim() || '',
         dob: r.dob,
         height: r.height,
         race: r.race,
@@ -188,15 +192,30 @@ export default function BulkEntry({ onAddBulk, currentUser, people }) {
     }
   };
 
+  const handleAddRows = (count = 5) => {
+    const newRows = Array.from({ length: count }, (_, i) => createEmptyRow(rows.length + i));
+    setRows(prev => [...prev, ...newRows]);
+  };
+
   const inputStyle = { padding: '8px', minWidth: '120px' };
 
   return (
     <div style={{ padding: '24px 0' }}>
       <div className="d-flex align-center justify-between mb-4">
-        <h2>Bulk Entry</h2>
-        <button onClick={handleSave} className="btn btn-primary">
-          <Save size={18} /> Save All Valid Rows
-        </button>
+        <div>
+          <h2 style={{ margin: 0 }}>Bulk Spreadsheet Entry</h2>
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+            Fast keyboard data entry for large family trees
+          </span>
+        </div>
+        <div className="d-flex gap-2">
+          <button type="button" onClick={() => handleAddRows(5)} className="btn btn-outline" style={{ padding: '8px 14px', fontSize: '0.85rem' }}>
+            <Plus size={16} /> Add 5 Rows
+          </button>
+          <button onClick={handleSave} className="btn btn-primary" style={{ padding: '8px 18px', fontSize: '0.85rem' }}>
+            <Save size={16} /> Save Valid Rows
+          </button>
+        </div>
       </div>
       <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>
         You can copy a row's <strong>Temp ID</strong> and paste it into another row's <strong>Mother ID</strong> or <strong>Father ID</strong> column. 
@@ -209,6 +228,8 @@ export default function BulkEntry({ onAddBulk, currentUser, people }) {
             <tr style={{ backgroundColor: 'var(--background-color)' }}>
               <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Temp ID</th>
               <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Name *</th>
+              <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Display Name</th>
+              <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Nick Name</th>
               <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Mother ID</th>
               <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Father ID</th>
               <th style={{ padding: '16px', position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--background-color)', borderBottom: '2px solid rgba(0,0,0,0.1)' }}>Spouse ID</th>
@@ -248,6 +269,12 @@ export default function BulkEntry({ onAddBulk, currentUser, people }) {
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <input type="text" className="form-control" style={inputStyle} value={row.name} onChange={(e) => handleInputChange(row.tempId, 'name', e.target.value)} placeholder="Full Name" />
+                  </td>
+                  <td style={{ padding: '12px 16px' }}>
+                    <input type="text" className="form-control" style={inputStyle} value={row.displayName} onChange={(e) => handleInputChange(row.tempId, 'displayName', e.target.value)} placeholder="Display Name" />
+                  </td>
+                  <td style={{ padding: '12px 16px' }}>
+                    <input type="text" className="form-control" style={inputStyle} value={row.nickname} onChange={(e) => handleInputChange(row.tempId, 'nickname', e.target.value)} placeholder="Nick Name" />
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <SearchableParentInput value={row.primaryMother} onChange={(val) => handleInputChange(row.tempId, 'primaryMother', val)} placeholder="ID or Temp ID" people={people} />

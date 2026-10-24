@@ -11,41 +11,97 @@ const getInitials = (name) => {
 };
 
 const CustomPersonNode = ({ data }) => {
-  const size = data.isRoot ? 60 : 50;
+  const isRoot = data.isRoot;
+  const primaryName = data.displayName || data.name;
+
   return (
     <div style={{ 
-      background: data.img ? 'transparent' : (data.isRoot ? '#ff4081' : '#6200ea'), 
-      color: '#fff',
-      borderRadius: '50%', 
-      width: size, 
-      height: size, 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      border: `2px solid ${data.isRoot ? '#ff4081' : '#6200ea'}`,
-      position: 'relative',
-      boxShadow: 'var(--elevation-2)',
+      width: '160px',
+      height: '56px',
+      background: 'var(--surface-color)',
+      borderRadius: '12px',
+      border: isRoot ? '2px solid #f472b6' : '1.5px solid var(--border-color)',
+      boxShadow: isRoot ? '0 4px 16px rgba(244, 114, 182, 0.35)' : 'var(--elevation-2)',
+      display: 'flex',
+      alignItems: 'center',
+      padding: '6px 10px',
+      gap: '8px',
       cursor: 'pointer',
-      backgroundImage: data.img ? `url(${data.img})` : 'none',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center'
+      position: 'relative',
+      transition: 'all 0.15s ease',
+      boxSizing: 'border-box'
     }}>
-      {!data.img && <span style={{ fontSize: size * 0.4, fontWeight: '500' }}>{data.initials}</span>}
-      
+      {/* Avatar / Initials Circle */}
+      <div style={{
+        width: '36px',
+        height: '36px',
+        borderRadius: '50%',
+        background: data.img ? 'transparent' : (isRoot ? 'linear-gradient(135deg, #f472b6 0%, #db2777 100%)' : 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)'),
+        backgroundImage: data.img ? `url(${data.img})` : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '13px',
+        fontWeight: '700',
+        flexShrink: 0,
+        boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+      }}>
+        {!data.img && data.initials}
+      </div>
+
+      {/* Details (Name + Nickname / DOB) */}
+      <div style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1, minWidth: 0 }}>
+        <div style={{ 
+          fontSize: '12.5px', 
+          fontWeight: '700', 
+          color: 'var(--text-primary)', 
+          whiteSpace: 'nowrap', 
+          overflow: 'hidden', 
+          textOverflow: 'ellipsis',
+          lineHeight: 1.2
+        }} title={primaryName}>
+          {primaryName}
+        </div>
+        
+        <div style={{ 
+          fontSize: '10.5px', 
+          color: data.nickname ? 'var(--primary-color)' : 'var(--text-secondary)', 
+          fontWeight: data.nickname ? '600' : '400',
+          whiteSpace: 'nowrap', 
+          overflow: 'hidden', 
+          textOverflow: 'ellipsis',
+          marginTop: '2px'
+        }}>
+          {data.nickname ? `"${data.nickname}"` : (data.dob ? `b. ${data.dob.slice(0, 4)}` : (data.ancestralVillage || 'Lineage Member'))}
+        </div>
+      </div>
+
+      {/* Children count badge */}
       {data.childrenCount > 0 && (
         <div style={{
-          position: 'absolute', top: -5, right: -5, background: '#ff4081', color: 'white',
-          borderRadius: '50%', width: 20, height: 20, fontSize: 11, fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', border: '2px solid white'
-        }}>
+          position: 'absolute',
+          top: -6,
+          right: -6,
+          background: '#f472b6',
+          color: '#fff',
+          borderRadius: '50%',
+          width: '18px',
+          height: '18px',
+          fontSize: '10px',
+          fontWeight: '700',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '1.5px solid var(--surface-color)',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+        }} title={`${data.childrenCount} children`}>
           {data.childrenCount}
         </div>
       )}
-      <div style={{ 
-        position: 'absolute', bottom: -24, color: 'var(--text-primary)', fontSize: 12, fontWeight: '500', whiteSpace: 'nowrap',
-        background: 'rgba(255,255,255,0.8)', padding: '2px 6px', borderRadius: '4px'
-      }}>
-        {data.name}
-      </div>
+
       <Handle type="target" position={Position.Top} style={{ visibility: 'hidden' }} />
       <Handle type="source" position={Position.Bottom} style={{ visibility: 'hidden' }} />
     </div>
@@ -54,7 +110,7 @@ const CustomPersonNode = ({ data }) => {
 
 const CustomUnionNode = () => {
   return (
-    <div style={{ width: 10, height: 10, background: 'rgba(0,0,0,0.4)', borderRadius: '50%', border: '2px solid white', margin: '15px', position: 'relative' }}>
+    <div style={{ width: 10, height: 10, background: 'var(--text-hint)', borderRadius: '50%', border: '2px solid var(--surface-color)', margin: '15px', position: 'relative' }}>
       <Handle type="target" position={Position.Top} style={{ visibility: 'hidden' }} />
       <Handle type="source" position={Position.Bottom} style={{ visibility: 'hidden' }} />
     </div>
@@ -66,14 +122,16 @@ const nodeTypes = {
   union: CustomUnionNode
 };
 
-const dagreGraph = new dagre.graphlib.Graph();
-dagreGraph.setDefaultEdgeLabel(() => ({}));
-
 const getLayoutedElements = (nodes, edges, direction = 'TB') => {
-  dagreGraph.setGraph({ rankdir: direction, ranksep: 80, nodesep: 60 });
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+  dagreGraph.setGraph({ rankdir: direction, ranksep: 55, nodesep: 35 });
 
   nodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: node.type === 'union' ? 40 : 80, height: node.type === 'union' ? 40 : 80 });
+    dagreGraph.setNode(node.id, { 
+      width: node.type === 'union' ? 20 : 165, 
+      height: node.type === 'union' ? 20 : 60 
+    });
   });
 
   edges.forEach((edge) => {
@@ -89,8 +147,8 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
     
     // Shift center to top-left
     node.position = {
-      x: nodeWithPosition.x - (node.type === 'union' ? 20 : 40),
-      y: nodeWithPosition.y - (node.type === 'union' ? 20 : 40),
+      x: nodeWithPosition.x - (node.type === 'union' ? 10 : 82),
+      y: nodeWithPosition.y - (node.type === 'union' ? 10 : 28),
     };
     return node;
   });
@@ -107,7 +165,7 @@ export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpd
   useEffect(() => {
     if (rfInstance && nodes.length > 0) {
       setTimeout(() => {
-        rfInstance.fitView({ padding: 0.5, duration: 800 });
+        rfInstance.fitView({ padding: 0.12, duration: 600 });
       }, 50);
     }
   }, [nodes, rfInstance]);
@@ -199,7 +257,11 @@ export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpd
         type: 'person',
         data: {
           name: p.name,
-          initials: getInitials(p.name),
+          displayName: p.displayName,
+          nickname: p.nickname,
+          dob: p.dob,
+          ancestralVillage: p.ancestralVillage,
+          initials: getInitials(p.displayName || p.name),
           isRoot: p.id === rootId,
           childrenCount: getChildrenCount(p.id),
           img: imgField ? imgField.value : null
@@ -304,10 +366,20 @@ export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpd
   };
 
   return (
-    <div style={{ height: 'calc(100vh - 150px)', position: 'relative', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '12px', overflow: 'hidden', backgroundColor: 'var(--background-color)' }}>
-      <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 10 }}>
-        <button onClick={onBack} className="btn btn-outline" style={{ backgroundColor: 'var(--surface-color)', boxShadow: 'var(--elevation-2)' }}>
-          <ArrowLeft size={18} /> Back to Global Web
+    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', backgroundColor: 'var(--background-color)' }}>
+      <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10 }}>
+        <button 
+          onClick={onBack} 
+          className="btn btn-outline" 
+          style={{ 
+            backgroundColor: 'var(--surface-color)', 
+            boxShadow: 'var(--elevation-2)',
+            padding: '8px 16px',
+            fontSize: '0.85rem',
+            borderColor: 'var(--border-color)'
+          }}
+        >
+          <ArrowLeft size={16} /> Back to Global Web
         </button>
       </div>
 
@@ -319,15 +391,15 @@ export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpd
         onNodeClick={onNodeClickInternal}
         nodeTypes={nodeTypes}
         onInit={setRfInstance}
-        minZoom={0.05}
-        maxZoom={3}
+        minZoom={0.15}
+        maxZoom={2.5}
         fitView
-        fitViewOptions={{ padding: 0.5 }}
+        fitViewOptions={{ padding: 0.12 }}
         attributionPosition="bottom-left"
       >
-        <Background color="#ccc" gap={16} />
+        <Background color="var(--text-hint)" gap={20} size={1} />
         <Controls />
-        <MiniMap zoomable pannable nodeColor={(n) => n.type === 'union' ? '#000' : (n.data?.isRoot ? '#ff4081' : '#6200ea')} />
+        <MiniMap zoomable pannable nodeColor={(n) => n.type === 'union' ? '#94a3b8' : (n.data?.isRoot ? '#f472b6' : '#7c3aed')} />
       </ReactFlow>
 
       {selectedDetails && (
