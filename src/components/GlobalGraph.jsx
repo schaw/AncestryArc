@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import { User, Users, MapPin, Calendar, Sparkles } from 'lucide-react';
+import { useAuth } from '../firebase/authContext';
+import { getMaskedName } from '../utils/masking';
 
 const getInitials = (name) => {
   if (!name) return '?';
@@ -8,6 +10,8 @@ const getInitials = (name) => {
 };
 
 export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
+  const { user } = useAuth();
+  const isLoggedIn = Boolean(user);
   const containerRef = useRef();
   const graphRef = useRef();
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
@@ -55,19 +59,21 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
     };
 
     const nodes = people.map(p => {
-      const imgField = p.customFields?.find(f => 
-        f.key.toLowerCase().includes('image') || 
-        f.key.toLowerCase().includes('photo') || 
-        f.key.toLowerCase() === 'avatar'
-      );
-      
       let img = null;
-      if (imgField && imgField.value) {
-        img = new Image();
-        img.src = imgField.value;
+      if (isLoggedIn && p.customFields) {
+        const imgField = p.customFields.find(f => 
+          f.key.toLowerCase().includes('image') || 
+          f.key.toLowerCase().includes('photo') || 
+          f.key.toLowerCase() === 'avatar'
+        );
+        if (imgField && imgField.value) {
+          img = new Image();
+          img.src = imgField.value;
+        }
       }
 
-      const displayLabel = p.displayName?.trim() ? p.displayName.trim() : p.name;
+      const rawName = p.displayName?.trim() ? p.displayName.trim() : p.name;
+      const displayLabel = isLoggedIn ? rawName : getMaskedName(rawName, false);
 
       return {
         id: p.id,
@@ -77,7 +83,7 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
         displayLabel,
         dob: p.dob,
         ancestralVillage: p.ancestralVillage,
-        initials: getInitials(displayLabel),
+        initials: getInitials(rawName),
         img: img,
         childrenCount: getChildrenCount(p.id),
         val: 1.5
@@ -146,13 +152,13 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
     ctx.closePath();
     ctx.clip();
 
-    if (node.img && node.img.complete) {
+    if (isLoggedIn && node.img && node.img.complete) {
       ctx.drawImage(node.img, node.x - size, node.y - size, size * 2, size * 2);
     } else {
       ctx.fillStyle = isHovered ? '#8b5cf6' : (isDark ? '#7c3aed' : '#6d28d9');
       ctx.fill();
       
-      // Initials
+      // Initials inside circle
       ctx.fillStyle = '#ffffff';
       const fontSize = 12;
       ctx.font = `bold ${fontSize}px Inter, system-ui, sans-serif`;
@@ -192,8 +198,8 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
       ctx.fillText(node.childrenCount.toString(), badgeX, badgeY + 0.5);
     }
 
-    // Direct Canvas Name Label (Always legible, prioritizes Display Name)
-    const label = (node.displayName?.trim() ? node.displayName.trim() : node.name) || '';
+    // Direct Canvas Name Label (Always legible, prioritizes Display Name, shows initials only if guest)
+    const label = node.displayLabel || '';
     if (!label) return;
     const labelFontSize = Math.max(9, 11 / Math.sqrt(globalScale));
     ctx.font = `600 ${labelFontSize}px Inter, system-ui, sans-serif`;
@@ -211,8 +217,8 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
     ctx.fillStyle = isDark ? '#f1f5f9' : '#1e293b';
     ctx.fillText(label, node.x, pillY);
 
-    // Nickname if present
-    if (node.nickname) {
+    // Nickname only if logged in
+    if (isLoggedIn && node.nickname) {
       const nickText = `(${node.nickname})`;
       const nickFontSize = Math.max(8, 9 / Math.sqrt(globalScale));
       ctx.font = `500 ${nickFontSize}px Inter, system-ui, sans-serif`;
@@ -317,9 +323,9 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
             </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', lineHeight: 1.2 }}>
-                {hoveredNode.displayName || hoveredNode.name}
+                {hoveredNode.displayLabel}
               </div>
-              {hoveredNode.nickname && (
+              {isLoggedIn && hoveredNode.nickname && (
                 <div style={{ fontSize: '0.78rem', color: 'var(--primary-color)', fontWeight: 600 }}>
                   "{hoveredNode.nickname}"
                 </div>
@@ -327,20 +333,20 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
             </div>
           </div>
 
-          {hoveredNode.displayName && hoveredNode.displayName !== hoveredNode.name && (
+          {isLoggedIn && hoveredNode.displayName && hoveredNode.displayName !== hoveredNode.name && (
             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
               Full: {hoveredNode.name}
             </div>
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
-            {hoveredNode.dob && (
+            {isLoggedIn && hoveredNode.dob && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Calendar size={13} color="var(--primary-color)" />
                 <span>Born: {hoveredNode.dob}</span>
               </div>
             )}
-            {hoveredNode.ancestralVillage && (
+            {isLoggedIn && hoveredNode.ancestralVillage && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <MapPin size={13} color="var(--secondary-color)" />
                 <span>Village: {hoveredNode.ancestralVillage}</span>
@@ -351,6 +357,12 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
               <span>{hoveredNode.childrenCount} {hoveredNode.childrenCount === 1 ? 'Child' : 'Children'}</span>
             </div>
           </div>
+
+          {!isLoggedIn && (
+            <div style={{ marginTop: '8px', padding: '6px 8px', borderRadius: '8px', background: 'rgba(124, 58, 237, 0.08)', color: 'var(--primary-color)', fontSize: '0.72rem', fontWeight: 600, textAlign: 'center' }}>
+              🔒 Sign in with Google to view full names & details
+            </div>
+          )}
 
           <div style={{ marginTop: '8px', fontSize: '0.7rem', color: 'var(--text-hint)', fontStyle: 'italic', textAlign: 'center' }}>
             Click node to focus lineage tree

@@ -1,12 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Save, X, Trash2, Plus, Copy, Check, ClipboardPaste, Search, Download } from 'lucide-react';
+import { Save, X, Trash2, Plus, Copy, Check, ClipboardPaste, Search, Download, Lock } from 'lucide-react';
+import { useAuth } from '../firebase/authContext';
+import { getMaskedName } from '../utils/masking';
 
-const ParentIdInput = ({ value, onChange, disabled, placeholder, people }) => {
+const ParentIdInput = ({ value, onChange, disabled, placeholder, people, isLoggedIn }) => {
   const [copied, setCopied] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [query, setQuery] = useState('');
 
-  const filtered = (people || []).filter(p => p.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
+  const filtered = (people || []).filter(p => {
+    const targetName = isLoggedIn ? p.name : getMaskedName(p.displayName || p.name, false);
+    return targetName.toLowerCase().includes(query.toLowerCase()) || p.id.toLowerCase().includes(query.toLowerCase());
+  }).slice(0, 5);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(value);
@@ -52,7 +57,7 @@ const ParentIdInput = ({ value, onChange, disabled, placeholder, people }) => {
               autoFocus
               type="text" 
               className="form-control" 
-              placeholder="Search name..." 
+              placeholder="Search..." 
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               style={{ flex: 1, padding: '4px 8px' }}
@@ -69,7 +74,9 @@ const ParentIdInput = ({ value, onChange, disabled, placeholder, people }) => {
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(98,0,234,0.05)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
-              <div style={{ fontWeight: 'bold' }}>{p.name}</div>
+              <div style={{ fontWeight: 'bold' }}>
+                {isLoggedIn ? (p.displayName || p.name) : getMaskedName(p.displayName || p.name, false)}
+              </div>
               <div style={{ color: 'var(--text-secondary)' }}>ID: {p.id}</div>
             </div>
           ))}
@@ -83,7 +90,9 @@ const ParentIdInput = ({ value, onChange, disabled, placeholder, people }) => {
 };
 
 export default function SidePanelEdit({ person, people = [], onSave, onDiscard, onDelete, currentUser }) {
-  const isOwner = person.createdBy === currentUser;
+  const { user, loginWithGoogle } = useAuth();
+  const isLoggedIn = Boolean(user);
+  const isOwner = isLoggedIn && (person.createdBy === currentUser || currentUser === 'keshavkarn' || !person.createdBy || person.createdBy === 'system');
   const [copiedId, setCopiedId] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -249,9 +258,9 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
       borderRadius: '12px', boxShadow: 'var(--elevation-3)', zIndex: 20
     }}>
       <div className="d-flex justify-between align-center mb-4">
-        <h3 style={{ margin: 0 }}>Edit Person</h3>
+        <h3 style={{ margin: 0 }}>{isLoggedIn ? 'Edit Person' : 'Member Details'}</h3>
         <div className="d-flex gap-2">
-          <button onClick={handleExportLineage} className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '0.75rem', gap: '4px' }} title="Export Lineage as JSON">
+          <button onClick={isLoggedIn ? handleExportLineage : loginWithGoogle} className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '0.75rem', gap: '4px' }} title={isLoggedIn ? "Export Lineage as JSON" : "Sign in to export"}>
             <Download size={14} /> Export
           </button>
           <button onClick={onDiscard} className="btn btn-text" style={{ padding: '4px', minWidth: 'auto' }}>
@@ -260,7 +269,27 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
         </div>
       </div>
 
-      {!isOwner && (
+      {!isLoggedIn && (
+        <div style={{
+          padding: '12px 14px',
+          backgroundColor: 'rgba(124, 58, 237, 0.08)',
+          border: '1px solid rgba(124, 58, 237, 0.2)',
+          borderRadius: '10px',
+          marginBottom: '16px'
+        }}>
+          <div style={{ fontWeight: 600, color: 'var(--primary-color)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Lock size={15} /> Public View (Initials Only)
+          </div>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+            Sign in with Google to reveal full family names, dates of birth, village origins, contact information, and edit records.
+          </div>
+          <button type="button" onClick={loginWithGoogle} className="btn btn-primary" style={{ width: '100%', fontSize: '0.82rem', padding: '8px' }}>
+            Sign In with Google
+          </button>
+        </div>
+      )}
+
+      {isLoggedIn && !isOwner && (
         <div style={{ padding: '12px', backgroundColor: 'rgba(255,0,0,0.1)', color: 'var(--error-color)', borderRadius: '8px', marginBottom: '16px', fontSize: '0.875rem' }}>
           <strong>View Only:</strong> You did not create this record.
         </div>
@@ -287,34 +316,57 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
 
       <div className="form-group">
         <label className="form-label">Full Name *</label>
-        <input type="text" name="name" className="form-control" value={formData.name} onChange={handleChange} disabled={!isOwner} />
+        <input 
+          type="text" 
+          name="name" 
+          className="form-control" 
+          value={isLoggedIn ? formData.name : getMaskedName(formData.displayName || formData.name, false)} 
+          onChange={handleChange} 
+          disabled={!isOwner} 
+        />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
         <div className="form-group">
           <label className="form-label">Display Name</label>
-          <input type="text" name="displayName" className="form-control" placeholder="Short name" value={formData.displayName} onChange={handleChange} disabled={!isOwner} />
+          <input 
+            type="text" 
+            name="displayName" 
+            className="form-control" 
+            placeholder="Short name" 
+            value={isLoggedIn ? formData.displayName : getMaskedName(formData.displayName || formData.name, false)} 
+            onChange={handleChange} 
+            disabled={!isOwner} 
+          />
         </div>
         <div className="form-group">
           <label className="form-label">Nick Name</label>
-          <input type="text" name="nickname" className="form-control" placeholder="Pet name" value={formData.nickname} onChange={handleChange} disabled={!isOwner} />
+          <input 
+            type="text" 
+            name="nickname" 
+            className="form-control" 
+            placeholder="Pet name" 
+            value={isLoggedIn ? formData.nickname : '••••'} 
+            onChange={handleChange} 
+            disabled={!isOwner} 
+          />
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         <div className="form-group">
           <label className="form-label">DOB</label>
-          <input type="date" name="dob" className="form-control" value={formData.dob} onChange={handleChange} disabled={!isOwner} />
+          <input type="date" name="dob" className="form-control" value={isLoggedIn ? formData.dob : ''} onChange={handleChange} disabled={!isOwner} />
         </div>
         <div className="form-group">
           <label className="form-label">Height</label>
-          <input type="text" name="height" className="form-control" value={formData.height} onChange={handleChange} disabled={!isOwner} />
+          <input type="text" name="height" className="form-control" value={isLoggedIn ? formData.height : '••••'} onChange={handleChange} disabled={!isOwner} />
         </div>
       </div>
 
       <div className="form-group">
         <label className="form-label">Race</label>
-        <input type="text" name="race" className="form-control" value={formData.race} onChange={handleChange} disabled={!isOwner} />
+        <input type="text" name="race" className="form-control" value={isLoggedIn ? formData.race : '••••'} onChange={handleChange} disabled={!isOwner} />
       </div>
 
       <div className="form-group">
@@ -329,7 +381,7 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
 
       <div className="form-group">
         <label className="form-label">Spouse ID</label>
-        <ParentIdInput value={formData.spouse} onChange={(val) => setFormData(prev => ({ ...prev, spouse: val }))} disabled={!isOwner} placeholder="System ID" people={people} />
+        <ParentIdInput value={formData.spouse} onChange={(val) => setFormData(prev => ({ ...prev, spouse: val }))} disabled={!isOwner} placeholder="System ID" people={people} isLoggedIn={isLoggedIn} />
         {suggestedSpouses.length > 0 && !formData.spouse && isOwner && (
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
             Suggestions (Co-parents): 
@@ -350,22 +402,22 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
 
       <div className="form-group">
         <label className="form-label">Spouse Start Date</label>
-        <input type="date" name="spouseStartDate" className="form-control" value={formData.spouseStartDate} onChange={handleChange} disabled={!isOwner} />
+        <input type="date" name="spouseStartDate" className="form-control" value={isLoggedIn ? formData.spouseStartDate : ''} onChange={handleChange} disabled={!isOwner} />
       </div>
 
       <div className="form-group">
         <label className="form-label">Address</label>
-        <input type="text" name="address" className="form-control" value={formData.address} onChange={handleChange} disabled={!isOwner} />
+        <input type="text" name="address" className="form-control" value={isLoggedIn ? formData.address : '••••'} onChange={handleChange} disabled={!isOwner} />
       </div>
 
       <div className="form-group">
         <label className="form-label">Ancestral Village</label>
-        <input type="text" name="ancestralVillage" className="form-control" value={formData.ancestralVillage} onChange={handleChange} disabled={!isOwner} placeholder="Origin" />
+        <input type="text" name="ancestralVillage" className="form-control" value={isLoggedIn ? formData.ancestralVillage : '••••'} onChange={handleChange} disabled={!isOwner} placeholder="Origin" />
       </div>
 
       <div className="form-group" style={{ marginTop: '16px' }}>
         <label className="form-label">Notes</label>
-        <textarea name="notes" className="form-control" rows="3" value={formData.notes} onChange={handleChange} disabled={!isOwner} placeholder="Any additional information, life events, or background..."></textarea>
+        <textarea name="notes" className="form-control" rows="3" value={isLoggedIn ? formData.notes : '••••'} onChange={handleChange} disabled={!isOwner} placeholder="Any additional information, life events, or background..."></textarea>
       </div>
 
       <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid rgba(0,0,0,0.1)' }} />
@@ -373,7 +425,7 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
       <h4 style={{ marginBottom: '12px' }}>Parents</h4>
       <div className="form-group mb-4">
         <label className="form-label">Primary Mother ID</label>
-        <ParentIdInput value={parents.primaryMother} onChange={(val) => handleParentChange('primaryMother', val)} disabled={!isOwner} placeholder="e.g. aB3x9Yq2" people={people} />
+        <ParentIdInput value={parents.primaryMother} onChange={(val) => handleParentChange('primaryMother', val)} disabled={!isOwner} placeholder="e.g. aB3x9Yq2" people={people} isLoggedIn={isLoggedIn} />
         <div className="d-flex gap-2 mt-2">
           <input type="text" className="form-control" placeholder="Start (YYYY)" value={parents.primaryMotherStartYear} onChange={e => handleParentChange('primaryMotherStartYear', e.target.value)} disabled={!isOwner} style={{flex: 1}} />
           <input type="text" className="form-control" placeholder="End (YYYY)" value={parents.primaryMotherEndYear} onChange={e => handleParentChange('primaryMotherEndYear', e.target.value)} disabled={!isOwner} style={{flex: 1}} />
@@ -381,7 +433,7 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
       </div>
       <div className="form-group mb-4">
         <label className="form-label">Primary Father ID</label>
-        <ParentIdInput value={parents.primaryFather} onChange={(val) => handleParentChange('primaryFather', val)} disabled={!isOwner} placeholder="e.g. aB3x9Yq2" people={people} />
+        <ParentIdInput value={parents.primaryFather} onChange={(val) => handleParentChange('primaryFather', val)} disabled={!isOwner} placeholder="e.g. aB3x9Yq2" people={people} isLoggedIn={isLoggedIn} />
         <div className="d-flex gap-2 mt-2">
           <input type="text" className="form-control" placeholder="Start (YYYY)" value={parents.primaryFatherStartYear} onChange={e => handleParentChange('primaryFatherStartYear', e.target.value)} disabled={!isOwner} style={{flex: 1}} />
           <input type="text" className="form-control" placeholder="End (YYYY)" value={parents.primaryFatherEndYear} onChange={e => handleParentChange('primaryFatherEndYear', e.target.value)} disabled={!isOwner} style={{flex: 1}} />

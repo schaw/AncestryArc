@@ -4,6 +4,8 @@ import '@xyflow/react/dist/style.css';
 import dagre from 'dagre';
 import { ArrowLeft } from 'lucide-react';
 import SidePanelEdit from './SidePanelEdit';
+import { useAuth } from '../firebase/authContext';
+import { getMaskedName } from '../utils/masking';
 
 const getInitials = (name) => {
   if (!name) return '?';
@@ -12,17 +14,22 @@ const getInitials = (name) => {
 
 const CustomPersonNode = ({ data }) => {
   const isRoot = data.isRoot;
-  // If display name is present, show that instead of full name
-  const primaryName = data.displayName?.trim() ? data.displayName.trim() : data.name;
+  const isLoggedIn = data.isLoggedIn;
 
-  // Subtitle: only show nickname, birth year, or village. Never show "Lineage Member"
+  // If public viewer, strictly show initials (e.g. "R. P. K.")
+  const rawName = data.displayName?.trim() ? data.displayName.trim() : data.name;
+  const primaryName = isLoggedIn ? rawName : getMaskedName(rawName, false);
+
+  // Subtitle: only show nickname, birth year, or village if authenticated
   let subtitle = null;
-  if (data.nickname?.trim()) {
-    subtitle = `"${data.nickname.trim()}"`;
-  } else if (data.dob?.trim()) {
-    subtitle = `b. ${data.dob.trim().slice(0, 4)}`;
-  } else if (data.ancestralVillage?.trim()) {
-    subtitle = data.ancestralVillage.trim();
+  if (isLoggedIn) {
+    if (data.nickname?.trim()) {
+      subtitle = `"${data.nickname.trim()}"`;
+    } else if (data.dob?.trim()) {
+      subtitle = `b. ${data.dob.trim().slice(0, 4)}`;
+    } else if (data.ancestralVillage?.trim()) {
+      subtitle = data.ancestralVillage.trim();
+    }
   }
 
   return (
@@ -47,8 +54,8 @@ const CustomPersonNode = ({ data }) => {
         width: '36px',
         height: '36px',
         borderRadius: '50%',
-        background: data.img ? 'transparent' : (isRoot ? 'linear-gradient(135deg, #f472b6 0%, #db2777 100%)' : 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)'),
-        backgroundImage: data.img ? `url(${data.img})` : 'none',
+        background: (isLoggedIn && data.img) ? 'transparent' : (isRoot ? 'linear-gradient(135deg, #f472b6 0%, #db2777 100%)' : 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)'),
+        backgroundImage: (isLoggedIn && data.img) ? `url(${data.img})` : 'none',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         color: '#fff',
@@ -60,7 +67,7 @@ const CustomPersonNode = ({ data }) => {
         flexShrink: 0,
         boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
       }}>
-        {!data.img && data.initials}
+        {(!isLoggedIn || !data.img) && data.initials}
       </div>
 
       {/* Details (Name + Subtitle if present) */}
@@ -170,6 +177,8 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
 };
 
 export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpdate, onDelete, currentUser }) {
+  const { user } = useAuth();
+  const isLoggedIn = Boolean(user);
   const [selectedDetails, setSelectedDetails] = useState(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -277,7 +286,8 @@ export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpd
           initials: getInitials(p.displayName || p.name),
           isRoot: p.id === rootId,
           childrenCount: getChildrenCount(p.id),
-          img: imgField ? imgField.value : null
+          img: imgField ? imgField.value : null,
+          isLoggedIn
         },
         position: { x: 0, y: 0 }
       });

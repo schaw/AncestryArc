@@ -4,8 +4,12 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlobalGraph from './GlobalGraph';
 import LineageTree from './LineageTree';
+import { useAuth } from '../firebase/authContext';
+import { getMaskedName } from '../utils/masking';
 
 export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, currentUser }) {
+  const { user, loginWithGoogle } = useAuth();
+  const isLoggedIn = Boolean(user);
   const [selectedPersonId, setSelectedPersonId] = useState(null);
   const [activeView, setActiveView] = useState('web');
   const [isGenerational, setIsGenerational] = useState(false);
@@ -111,6 +115,10 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
   };
 
   const handleExportAllCsv = () => {
+    if (!isLoggedIn) {
+      loginWithGoogle();
+      return;
+    }
     if (!people || people.length === 0) return;
 
     const headers = [
@@ -144,6 +152,10 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
   };
 
   const handleExportAllJson = () => {
+    if (!isLoggedIn) {
+      loginWithGoogle();
+      return;
+    }
     if (!people || people.length === 0) return;
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(people, null, 2));
     const downloadAnchorNode = document.createElement('a');
@@ -155,6 +167,10 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
   };
 
   const handleImportJsonFile = (e) => {
+    if (!isLoggedIn) {
+      loginWithGoogle();
+      return;
+    }
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -213,7 +229,12 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>Focused Lineage</span>
               <span style={{ color: 'var(--text-hint)', fontSize: '0.8rem' }}>
-                ({people.find(p => p.id === selectedPersonId)?.name || selectedPersonId})
+                ({(() => {
+                  const p = people.find(x => x.id === selectedPersonId);
+                  if (!p) return selectedPersonId;
+                  const rawName = p.displayName?.trim() ? p.displayName.trim() : p.name;
+                  return isLoggedIn ? rawName : getMaskedName(rawName, false);
+                })()})
               </span>
             </div>
           )}
@@ -356,14 +377,22 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '0.85rem' }}>{p.name}</span>
+                        <span style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '0.85rem' }}>
+                          {isLoggedIn ? (p.displayName || p.name) : getMaskedName(p.displayName || p.name, false)}
+                        </span>
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-hint)', background: 'var(--background-color)', padding: '2px 5px', borderRadius: '4px' }}>
                           {p.id}
                         </span>
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                        {p.dob ? `Born ${p.dob}` : 'Birth date unknown'}
-                        {p.ancestralVillage ? ` • ${p.ancestralVillage}` : ''}
+                        {isLoggedIn ? (
+                          <>
+                            {p.dob ? `Born ${p.dob}` : 'Birth date unknown'}
+                            {p.ancestralVillage ? ` • ${p.ancestralVillage}` : ''}
+                          </>
+                        ) : (
+                          'Member (Initials Only)'
+                        )}
                       </div>
                     </div>
                   ))}

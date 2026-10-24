@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Undo2, Save, Copy, Check, Search, X, Plus } from 'lucide-react';
+import { Trash2, Undo2, Save, Copy, Check, Search, X, Plus, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateUniqueId } from '../utils/generateId';
+import { useAuth } from '../firebase/authContext';
+import { getMaskedName } from '../utils/masking';
 
 const createEmptyRow = (index) => ({
   tempId: `#T${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
@@ -22,11 +24,14 @@ const createEmptyRow = (index) => ({
   notes: ''
 });
 
-const SearchableParentInput = ({ value, onChange, placeholder, people }) => {
+const SearchableParentInput = ({ value, onChange, placeholder, people, isLoggedIn }) => {
   const [showSearch, setShowSearch] = useState(false);
   const [query, setQuery] = useState('');
 
-  const filtered = (people || []).filter(p => p.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
+  const filtered = (people || []).filter(p => {
+    const targetName = isLoggedIn ? (p.displayName || p.name) : getMaskedName(p.displayName || p.name, false);
+    return targetName.toLowerCase().includes(query.toLowerCase()) || p.id.toLowerCase().includes(query.toLowerCase());
+  }).slice(0, 5);
 
   return (
     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -58,7 +63,7 @@ const SearchableParentInput = ({ value, onChange, placeholder, people }) => {
               autoFocus
               type="text" 
               className="form-control" 
-              placeholder="Search name..." 
+              placeholder="Search..." 
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               style={{ flex: 1, padding: '4px 8px' }}
@@ -75,7 +80,9 @@ const SearchableParentInput = ({ value, onChange, placeholder, people }) => {
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(98,0,234,0.05)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
-              <div style={{ fontWeight: 'bold' }}>{p.name}</div>
+              <div style={{ fontWeight: 'bold' }}>
+                {isLoggedIn ? (p.displayName || p.name) : getMaskedName(p.displayName || p.name, false)}
+              </div>
               <div style={{ color: 'var(--text-secondary)' }}>ID: {p.id}</div>
             </div>
           ))}
@@ -90,6 +97,8 @@ const SearchableParentInput = ({ value, onChange, placeholder, people }) => {
 
 export default function BulkEntry({ onAddBulk, currentUser, people }) {
   const navigate = useNavigate();
+  const { user, loginWithGoogle } = useAuth();
+  const isLoggedIn = Boolean(user);
   const [rows, setRows] = useState(() => Array.from({ length: 20 }, (_, i) => createEmptyRow(i)));
   const [deletedRow, setDeletedRow] = useState(null);
   const [undoTimeout, setUndoTimeout] = useState(null);
@@ -140,6 +149,10 @@ export default function BulkEntry({ onAddBulk, currentUser, people }) {
   };
 
   const handleSave = () => {
+    if (!isLoggedIn) {
+      loginWithGoogle();
+      return;
+    }
     const validRows = rows.filter(r => r.name.trim() !== '');
     
     // 1. Generate real IDs for all valid rows
@@ -201,6 +214,32 @@ export default function BulkEntry({ onAddBulk, currentUser, people }) {
 
   return (
     <div style={{ padding: '24px 0' }}>
+      {!isLoggedIn && (
+        <div style={{
+          padding: '16px',
+          backgroundColor: 'rgba(124, 58, 237, 0.08)',
+          border: '1px solid rgba(124, 58, 237, 0.2)',
+          borderRadius: '12px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px'
+        }}>
+          <div>
+            <div style={{ fontWeight: 700, color: 'var(--primary-color)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Lock size={16} /> Google Sign-In Required to Save Bulk Lineage
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+              You are currently browsing in guest mode. Please sign in with Google to save entries directly to the family cloud database.
+            </div>
+          </div>
+          <button type="button" onClick={loginWithGoogle} className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>
+            Sign In with Google
+          </button>
+        </div>
+      )}
+
       <div className="d-flex align-center justify-between mb-4">
         <div>
           <h2 style={{ margin: 0 }}>Bulk Spreadsheet Entry</h2>
@@ -277,13 +316,13 @@ export default function BulkEntry({ onAddBulk, currentUser, people }) {
                     <input type="text" className="form-control" style={inputStyle} value={row.nickname} onChange={(e) => handleInputChange(row.tempId, 'nickname', e.target.value)} placeholder="Nick Name" />
                   </td>
                   <td style={{ padding: '12px 16px' }}>
-                    <SearchableParentInput value={row.primaryMother} onChange={(val) => handleInputChange(row.tempId, 'primaryMother', val)} placeholder="ID or Temp ID" people={people} />
+                    <SearchableParentInput value={row.primaryMother} onChange={(val) => handleInputChange(row.tempId, 'primaryMother', val)} placeholder="ID or Temp ID" people={people} isLoggedIn={isLoggedIn} />
                   </td>
                   <td style={{ padding: '12px 16px' }}>
-                    <SearchableParentInput value={row.primaryFather} onChange={(val) => handleInputChange(row.tempId, 'primaryFather', val)} placeholder="ID or Temp ID" people={people} />
+                    <SearchableParentInput value={row.primaryFather} onChange={(val) => handleInputChange(row.tempId, 'primaryFather', val)} placeholder="ID or Temp ID" people={people} isLoggedIn={isLoggedIn} />
                   </td>
                   <td style={{ padding: '12px 16px' }}>
-                    <SearchableParentInput value={row.spouse} onChange={(val) => handleInputChange(row.tempId, 'spouse', val)} placeholder="ID or Temp ID" people={people} />
+                    <SearchableParentInput value={row.spouse} onChange={(val) => handleInputChange(row.tempId, 'spouse', val)} placeholder="ID or Temp ID" people={people} isLoggedIn={isLoggedIn} />
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <input type="date" className="form-control" style={inputStyle} value={row.dob} onChange={(e) => handleInputChange(row.tempId, 'dob', e.target.value)} />
