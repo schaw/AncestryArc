@@ -68,6 +68,9 @@
 - [x] **Legible Lineage Tree Cards**:
   - Replaced microscopic 50px circles with structured **160px × 56px genealogical cards** displaying bold primary names and subtitle tags for nicknames/birth years.
   - Reduced `fitView` padding from `0.5` to `0.12` with scale compensation for instant readability without zooming.
+  - Eliminated "Lineage Member" placeholder text entirely.
+  - Strictly prioritized Display Name over Legal/Full Name whenever provided.
+  - Enabled automatic zoom-in when clicking a node, and instant right-pane collapse + full-tree zoom-out when clicking outside on empty canvas space (`onPaneClick` / `onBackgroundClick`).
 - [x] **Global Web Canvas Overhaul & Instant Hover Cards**:
   - Enforced finite-coordinate guard clauses in `drawNode` to eliminate initial-tick canvas crashes.
   - Replaced sluggish browser tooltips with a zero-latency floating HTML hover card and direct-on-canvas legible labels.

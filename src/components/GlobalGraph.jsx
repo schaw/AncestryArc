@@ -67,7 +67,7 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
         img.src = imgField.value;
       }
 
-      const displayLabel = p.displayName || p.name;
+      const displayLabel = p.displayName?.trim() ? p.displayName.trim() : p.name;
 
       return {
         id: p.id,
@@ -192,8 +192,8 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
       ctx.fillText(node.childrenCount.toString(), badgeX, badgeY + 0.5);
     }
 
-    // Direct Canvas Name Label (Always legible)
-    const label = node.displayName || node.name || '';
+    // Direct Canvas Name Label (Always legible, prioritizes Display Name)
+    const label = (node.displayName?.trim() ? node.displayName.trim() : node.name) || '';
     if (!label) return;
     const labelFontSize = Math.max(9, 11 / Math.sqrt(globalScale));
     ctx.font = `600 ${labelFontSize}px Inter, system-ui, sans-serif`;
@@ -258,7 +258,18 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
           }
         }}
         onNodeClick={node => {
-          if (!node.isUnion) onNodeClick(node.id);
+          if (!node.isUnion) {
+            if (graphRef.current && Number.isFinite(node.x) && Number.isFinite(node.y)) {
+              graphRef.current.centerAt(node.x, node.y, 500);
+              graphRef.current.zoom(2.5, 500);
+            }
+            onNodeClick(node.id);
+          }
+        }}
+        onBackgroundClick={() => {
+          if (graphRef.current) {
+            graphRef.current.zoomToFit(500, 35);
+          }
         }}
         backgroundColor={isDark ? '#0f172a' : '#f8fafc'}
         cooldownTicks={50}

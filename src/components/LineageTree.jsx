@@ -12,7 +12,18 @@ const getInitials = (name) => {
 
 const CustomPersonNode = ({ data }) => {
   const isRoot = data.isRoot;
-  const primaryName = data.displayName || data.name;
+  // If display name is present, show that instead of full name
+  const primaryName = data.displayName?.trim() ? data.displayName.trim() : data.name;
+
+  // Subtitle: only show nickname, birth year, or village. Never show "Lineage Member"
+  let subtitle = null;
+  if (data.nickname?.trim()) {
+    subtitle = `"${data.nickname.trim()}"`;
+  } else if (data.dob?.trim()) {
+    subtitle = `b. ${data.dob.trim().slice(0, 4)}`;
+  } else if (data.ancestralVillage?.trim()) {
+    subtitle = data.ancestralVillage.trim();
+  }
 
   return (
     <div style={{ 
@@ -52,10 +63,10 @@ const CustomPersonNode = ({ data }) => {
         {!data.img && data.initials}
       </div>
 
-      {/* Details (Name + Nickname / DOB) */}
+      {/* Details (Name + Subtitle if present) */}
       <div style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1, minWidth: 0 }}>
         <div style={{ 
-          fontSize: '12.5px', 
+          fontSize: subtitle ? '12.5px' : '13.5px', 
           fontWeight: '700', 
           color: 'var(--text-primary)', 
           whiteSpace: 'nowrap', 
@@ -66,17 +77,19 @@ const CustomPersonNode = ({ data }) => {
           {primaryName}
         </div>
         
-        <div style={{ 
-          fontSize: '10.5px', 
-          color: data.nickname ? 'var(--primary-color)' : 'var(--text-secondary)', 
-          fontWeight: data.nickname ? '600' : '400',
-          whiteSpace: 'nowrap', 
-          overflow: 'hidden', 
-          textOverflow: 'ellipsis',
-          marginTop: '2px'
-        }}>
-          {data.nickname ? `"${data.nickname}"` : (data.dob ? `b. ${data.dob.slice(0, 4)}` : (data.ancestralVillage || 'Lineage Member'))}
-        </div>
+        {subtitle && (
+          <div style={{ 
+            fontSize: '10.5px', 
+            color: data.nickname ? 'var(--primary-color)' : 'var(--text-secondary)', 
+            fontWeight: data.nickname ? '600' : '400',
+            whiteSpace: 'nowrap', 
+            overflow: 'hidden', 
+            textOverflow: 'ellipsis',
+            marginTop: '2px'
+          }}>
+            {subtitle}
+          </div>
+        )}
       </div>
 
       {/* Children count badge */}
@@ -352,6 +365,20 @@ export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpd
     const person = people.find(p => p.id === node.id);
     setSelectedDetails(person);
     onNodeClick(node.id);
+
+    // Zoom into the clicked node
+    if (rfInstance && node.position) {
+      rfInstance.setCenter(node.position.x + 80, node.position.y + 28, { zoom: 1.15, duration: 600 });
+    }
+  };
+
+  const onPaneClick = () => {
+    // Close side panel when clicking on empty space
+    setSelectedDetails(null);
+    // Zoom back out to fit the entire tree
+    if (rfInstance) {
+      rfInstance.fitView({ padding: 0.12, duration: 600 });
+    }
   };
 
   const handleSave = (updatedPerson) => {
@@ -389,6 +416,7 @@ export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpd
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClickInternal}
+        onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
         onInit={setRfInstance}
         minZoom={0.15}
