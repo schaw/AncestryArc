@@ -118,6 +118,8 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
   }, [people]);
 
   const drawNode = (node, ctx, globalScale) => {
+    if (!node || !Number.isFinite(node.x) || !Number.isFinite(node.y) || !Number.isFinite(globalScale) || globalScale <= 0) return;
+
     if (node.isUnion) {
       ctx.beginPath();
       ctx.arc(node.x, node.y, 3, 0, 2 * Math.PI, false);
@@ -147,11 +149,7 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
     if (node.img && node.img.complete) {
       ctx.drawImage(node.img, node.x - size, node.y - size, size * 2, size * 2);
     } else {
-      // Sleek gradient background
-      const grad = ctx.createLinearGradient(node.x - size, node.y - size, node.x + size, node.y + size);
-      grad.addColorStop(0, '#7c3aed');
-      grad.addColorStop(1, '#4f46e5');
-      ctx.fillStyle = grad;
+      ctx.fillStyle = isHovered ? '#8b5cf6' : (isDark ? '#7c3aed' : '#6d28d9');
       ctx.fill();
       
       // Initials
@@ -195,7 +193,8 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
     }
 
     // Direct Canvas Name Label (Always legible)
-    const label = node.displayName || node.name;
+    const label = node.displayName || node.name || '';
+    if (!label) return;
     const labelFontSize = Math.max(9, 11 / Math.sqrt(globalScale));
     ctx.font = `600 ${labelFontSize}px Inter, system-ui, sans-serif`;
     ctx.textAlign = 'center';
