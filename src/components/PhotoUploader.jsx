@@ -165,8 +165,9 @@ export default function PhotoUploader({ photos = {}, onChange, disabled = false,
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '12px 6px', textAlign: 'center', flex: 1 }}>
                   {isCompressing ? (
-                    <div style={{ fontSize: '0.8rem', color: 'var(--primary-color)', fontWeight: 600 }}>
-                      Optimizing photo...
+                    <div style={{ fontSize: '0.8rem', color: 'var(--primary-color)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="spinner" style={{ display: 'inline-block', width: '12px', height: '12px', border: '2px solid var(--primary-color)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                      Optimizing & Uploading to Cloud...
                     </div>
                   ) : (
                     <>
