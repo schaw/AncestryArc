@@ -193,14 +193,15 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
-      {/* Sleek, Single-Row Main Toolbar */}
+      {/* Sleek, Responsive Main Toolbar */}
       <div 
+        className="dashboard-toolbar"
         style={{ 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'space-between', 
           flexWrap: 'wrap', 
-          gap: '12px',
+          gap: '10px',
           background: 'var(--surface-color)',
           padding: '10px 16px',
           borderRadius: '14px',
@@ -209,7 +210,7 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
         }}
       >
         {/* Left: View Switcher Tabs + Generational Toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <div className="toolbar-left" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {!selectedPersonId ? (
             <div className="tab-bar">
               <button 
@@ -271,11 +272,12 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
         {/* Center: Minimalist Stats Capsule */}
         {people.length > 0 && (
           <div 
+            className="toolbar-center"
             onClick={() => setShowStatsDrawer(!showStatsDrawer)}
             style={{ 
               display: 'flex', 
               alignItems: 'center', 
-              gap: '12px',
+              gap: '10px',
               padding: '6px 14px', 
               borderRadius: '20px', 
               background: 'var(--background-color)',
@@ -284,23 +286,25 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
               fontSize: '0.82rem',
               fontWeight: 500,
               color: 'var(--text-secondary)',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              overflowX: 'auto',
+              whiteSpace: 'nowrap'
             }}
             title="Click to view detailed metrics breakdown"
           >
-            <BarChart2 size={15} color="var(--primary-color)" />
+            <BarChart2 size={15} color="var(--primary-color)" style={{ flexShrink: 0 }} />
             <span><strong style={{ color: 'var(--text-primary)' }}>{stats.totalPeople}</strong> Members</span>
             <span>•</span>
-            <span><strong style={{ color: 'var(--text-primary)' }}>{stats.generations}</strong> Generations</span>
+            <span><strong style={{ color: 'var(--text-primary)' }}>{stats.generations}</strong> Gen</span>
             <span>•</span>
-            <span><strong style={{ color: 'var(--text-primary)' }}>{stats.relationships}</strong> Connections</span>
+            <span><strong style={{ color: 'var(--text-primary)' }}>{stats.relationships}</strong> Links</span>
           </div>
         )}
 
         {/* Right: Actions & Maximize Control */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="toolbar-right" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {/* Search Dropdown */}
-          <div ref={searchContainerRef} style={{ position: 'relative', width: '220px' }}>
+          <div ref={searchContainerRef} className="toolbar-search" style={{ position: 'relative', minWidth: '180px', flex: '1 1 auto' }}>
             <div 
               style={{ 
                 display: 'flex',
@@ -308,7 +312,8 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
                 backgroundColor: 'var(--background-color)', 
                 borderRadius: '10px', 
                 padding: '6px 10px', 
-                border: '1px solid var(--border-color)'
+                border: '1px solid var(--border-color)',
+                width: '100%'
               }}
             >
               <Search size={15} color="var(--text-secondary)" style={{ marginRight: '6px', flexShrink: 0 }} />

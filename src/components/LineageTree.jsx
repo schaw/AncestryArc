@@ -270,9 +270,9 @@ export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpd
     };
 
     subsetPeople.forEach(p => {
-      const imgField = p.customFields?.find(f => 
+      const photoUrl = p.photos?.avatar || p.customFields?.find(f => 
         f.key.toLowerCase().includes('image') || f.key.toLowerCase().includes('photo') || f.key.toLowerCase() === 'avatar'
-      );
+      )?.value;
 
       initialNodes.push({
         id: p.id,
@@ -283,10 +283,11 @@ export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpd
           nickname: p.nickname,
           dob: p.dob,
           ancestralVillage: p.ancestralVillage,
+          socialLinks: p.socialLinks || [],
           initials: getInitials(p.displayName || p.name),
           isRoot: p.id === rootId,
           childrenCount: getChildrenCount(p.id),
-          img: imgField ? imgField.value : null,
+          img: photoUrl || null,
           isLoggedIn
         },
         position: { x: 0, y: 0 }

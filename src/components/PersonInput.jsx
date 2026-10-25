@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Save, Copy, Check, ClipboardPaste, Search, X, Lock } from 'lucide-react';
 import { generateUniqueId } from '../utils/generateId';
 import { useAuth } from '../firebase/authContext';
+import SocialLinksEditor from './SocialLinksEditor';
+import PhotoUploader from './PhotoUploader';
 
 const ParentIdInput = ({ value, onChange, disabled, placeholder, people }) => {
   const [copied, setCopied] = useState(false);
@@ -113,6 +115,8 @@ export default function PersonInput({ people, onSave, initialData = null, curren
     ancestralVillage: '',
     notes: '',
     isPublic: true,
+    photos: {},
+    socialLinks: []
   });
 
   const [saveStatus, setSaveStatus] = useState(null);
@@ -131,6 +135,11 @@ export default function PersonInput({ people, onSave, initialData = null, curren
 
   useEffect(() => {
     if (initialData) {
+      const legacyImg = initialData.customFields?.find(f => 
+        f.key.toLowerCase().includes('image') || f.key.toLowerCase().includes('photo') || f.key.toLowerCase() === 'avatar'
+      )?.value;
+      const initialPhotos = initialData.photos || (legacyImg ? { avatar: legacyImg } : {});
+
       setFormData({
         id: initialData.id,
         name: initialData.name || '',
@@ -146,6 +155,8 @@ export default function PersonInput({ people, onSave, initialData = null, curren
         ancestralVillage: initialData.ancestralVillage || '',
         notes: initialData.notes || '',
         isPublic: initialData.isPublic !== false,
+        photos: initialPhotos,
+        socialLinks: initialData.socialLinks || []
       });
       setParents({
         primaryMother: initialData.parents?.primaryMother || '',
@@ -228,6 +239,8 @@ export default function PersonInput({ people, onSave, initialData = null, curren
 
     const personData = {
       ...formData,
+      photos: formData.photos || {},
+      socialLinks: (formData.socialLinks || []).filter(l => l.url && l.url.trim() !== ''),
       createdBy: initialData?.createdBy || currentUser,
       parents: {
         primaryMother: parents.primaryMother.trim() || null,
@@ -297,6 +310,17 @@ export default function PersonInput({ people, onSave, initialData = null, curren
       </div>
       
       <form onSubmit={handleSubmit}>
+        {/* Family Photos (Max 3 Slots) */}
+        <div className="mb-4">
+          <PhotoUploader 
+            photos={formData.photos || {}} 
+            onChange={(p) => setFormData(prev => ({ ...prev, photos: p }))} 
+            disabled={!isLoggedIn} 
+            isLoggedIn={isLoggedIn} 
+            personId={formData.id} 
+          />
+        </div>
+
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
             <label className="form-label">Full Legal Name *</label>
@@ -422,6 +446,16 @@ export default function PersonInput({ people, onSave, initialData = null, curren
             </button>
           </div>
         ))}
+
+        {/* Social & Communication Links */}
+        <div className="mb-4">
+          <SocialLinksEditor 
+            links={formData.socialLinks || []} 
+            onChange={(links) => setFormData(prev => ({ ...prev, socialLinks: links }))} 
+            disabled={!isLoggedIn} 
+            isLoggedIn={isLoggedIn} 
+          />
+        </div>
 
         <hr style={{ border: 'none', borderTop: '1px solid rgba(0,0,0,0.1)', margin: '32px 0' }} />
 

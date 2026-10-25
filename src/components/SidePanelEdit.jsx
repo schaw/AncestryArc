@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Save, X, Trash2, Plus, Copy, Check, ClipboardPaste, Search, Download, Lock } from 'lucide-react';
 import { useAuth } from '../firebase/authContext';
 import { getMaskedName } from '../utils/masking';
+import SocialLinksEditor, { SocialLinkBadges } from './SocialLinksEditor';
+import PhotoUploader, { PhotoGalleryView } from './PhotoUploader';
 
 const ParentIdInput = ({ value, onChange, disabled, placeholder, people, isLoggedIn }) => {
   const [copied, setCopied] = useState(false);
@@ -105,6 +107,7 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
   const [saveStatus, setSaveStatus] = useState(null);
   const [formData, setFormData] = useState({
     id: '', name: '', displayName: '', nickname: '', dob: '', height: '', race: '', gender: '', spouse: '', spouseStartDate: '', address: '', ancestralVillage: '', notes: '', isPublic: true,
+    photos: {}, socialLinks: []
   });
 
   const [parents, setParents] = useState({
@@ -117,6 +120,11 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
 
   useEffect(() => {
     if (person) {
+      const legacyImg = person.customFields?.find(f => 
+        f.key.toLowerCase().includes('image') || f.key.toLowerCase().includes('photo') || f.key.toLowerCase() === 'avatar'
+      )?.value;
+      const initialPhotos = person.photos || (legacyImg ? { avatar: legacyImg } : {});
+
       setFormData({
         id: person.id,
         name: person.name || '',
@@ -132,6 +140,8 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
         ancestralVillage: person.ancestralVillage || '',
         notes: person.notes || '',
         isPublic: person.isPublic !== false,
+        photos: initialPhotos,
+        socialLinks: person.socialLinks || []
       });
       setParents({
         primaryMother: person.parents?.primaryMother || '',
@@ -173,6 +183,8 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
     const updatedData = {
       ...formData,
       createdBy: person.createdBy,
+      photos: formData.photos || {},
+      socialLinks: (formData.socialLinks || []).filter(l => l.url && l.url.trim() !== ''),
       parents: {
         primaryMother: parents.primaryMother.trim() || null,
         primaryFather: parents.primaryFather.trim() || null,
@@ -252,11 +264,7 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
   }, [person, people, formData.spouse]);
 
   return (
-    <div style={{
-      position: 'absolute', top: 10, right: 10, width: '400px', maxHeight: 'calc(100vh - 170px)',
-      overflowY: 'auto', backgroundColor: 'var(--surface-color)', padding: '20px',
-      borderRadius: '12px', boxShadow: 'var(--elevation-3)', zIndex: 20
-    }}>
+    <div className="side-panel-drawer">
       <div className="d-flex justify-between align-center mb-4">
         <h3 style={{ margin: 0 }}>{isLoggedIn ? 'Edit Person' : 'Member Details'}</h3>
         <div className="d-flex gap-2">
@@ -312,6 +320,21 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
         <small style={{ display: 'block', marginTop: '4px', color: 'var(--text-secondary)' }}>
           Created By: <strong>{person.createdBy}</strong>
         </small>
+      </div>
+
+      {/* Family Photos (Max 3 Slots) */}
+      <div className="mb-4">
+        {isOwner ? (
+          <PhotoUploader 
+            photos={formData.photos || {}} 
+            onChange={(p) => setFormData(prev => ({ ...prev, photos: p }))} 
+            disabled={!isOwner} 
+            isLoggedIn={isLoggedIn} 
+            personId={formData.id} 
+          />
+        ) : (
+          <PhotoGalleryView photos={formData.photos} />
+        )}
       </div>
 
       <div className="form-group">
@@ -418,6 +441,23 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
       <div className="form-group" style={{ marginTop: '16px' }}>
         <label className="form-label">Notes</label>
         <textarea name="notes" className="form-control" rows="3" value={isLoggedIn ? formData.notes : '••••'} onChange={handleChange} disabled={!isOwner} placeholder="Any additional information, life events, or background..."></textarea>
+      </div>
+
+      {/* Social & Communication Links */}
+      <div className="mb-4">
+        {isOwner ? (
+          <SocialLinksEditor 
+            links={formData.socialLinks || []} 
+            onChange={(links) => setFormData(prev => ({ ...prev, socialLinks: links }))} 
+            disabled={!isOwner} 
+            isLoggedIn={isLoggedIn} 
+          />
+        ) : (
+          <div>
+            <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '4px' }}>Social & Contact Links</label>
+            <SocialLinkBadges links={formData.socialLinks} isLoggedIn={isLoggedIn} />
+          </div>
+        )}
       </div>
 
       <hr style={{ margin: '24px 0', border: 'none', borderTop: '1px solid rgba(0,0,0,0.1)' }} />

@@ -3,6 +3,7 @@ import ForceGraph2D from 'react-force-graph-2d';
 import { User, Users, MapPin, Calendar, Sparkles } from 'lucide-react';
 import { useAuth } from '../firebase/authContext';
 import { getMaskedName } from '../utils/masking';
+import { SocialLinkBadges } from './SocialLinksEditor';
 
 const getInitials = (name) => {
   if (!name) return '?';
@@ -60,15 +61,16 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
 
     const nodes = people.map(p => {
       let img = null;
-      if (isLoggedIn && p.customFields) {
-        const imgField = p.customFields.find(f => 
+      if (isLoggedIn) {
+        const photoUrl = p.photos?.avatar || p.customFields?.find(f => 
           f.key.toLowerCase().includes('image') || 
           f.key.toLowerCase().includes('photo') || 
           f.key.toLowerCase() === 'avatar'
-        );
-        if (imgField && imgField.value) {
+        )?.value;
+
+        if (photoUrl) {
           img = new Image();
-          img.src = imgField.value;
+          img.src = photoUrl;
         }
       }
 
@@ -83,6 +85,7 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
         displayLabel,
         dob: p.dob,
         ancestralVillage: p.ancestralVillage,
+        socialLinks: p.socialLinks || [],
         initials: getInitials(rawName),
         img: img,
         childrenCount: getChildrenCount(p.id),
@@ -356,6 +359,12 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
               <Users size={13} color="var(--accent-color)" />
               <span>{hoveredNode.childrenCount} {hoveredNode.childrenCount === 1 ? 'Child' : 'Children'}</span>
             </div>
+
+            {isLoggedIn && hoveredNode.socialLinks && hoveredNode.socialLinks.length > 0 && (
+              <div style={{ marginTop: '4px' }}>
+                <SocialLinkBadges links={hoveredNode.socialLinks} isLoggedIn={isLoggedIn} />
+              </div>
+            )}
           </div>
 
           {!isLoggedIn && (
