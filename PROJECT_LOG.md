@@ -90,6 +90,23 @@
 - [x] **Canvas Ergonomics & Outside Click Navigation**:
   - Clicking empty canvas space zooms back out to fit the full tree and collapses the right editing side panel.
   - Elimination of the generic "Lineage Member" subtitle fallback; preferred Display Name everywhere.
+- [x] **Mobile Responsiveness Overhaul**:
+  - Eliminated horizontal viewport scrolling (`max-width: 100vw; overflow-x: hidden`).
+  - Added dedicated `@media (max-width: 768px)` stylesheet rules.
+  - Responsive app header with scrollable horizontal navigation bar preventing button cut-off.
+  - Responsive dashboard toolbar wrapping tabs, search, and action buttons cleanly.
+  - Side panel converted into a smooth, full-screen mobile drawer (`.side-panel-drawer`) preventing overflow truncation.
+- [x] **Social & Communication Links Section**:
+  - Interactive link manager with dropdown selector (`Instagram`, `Gmail / Email`, `WhatsApp`, `Facebook`, `LinkedIn`, `X / Twitter`, `Telegram`, `TikTok`, `Other`).
+  - Allows adding unlimited links via `+ Add Link`.
+  - Display mode generates direct click-to-chat / click-to-profile badges.
+  - Masked for unauthenticated visitors.
+- [x] **3-Slot Family Photo System & Storage Architecture**:
+  - Slot 1: **Self Image / Portrait** (Primary avatar on canvas nodes and tree cards).
+  - Slot 2: **Self with Family Above** (Parents, grandparents, elder generation).
+  - Slot 3: **Self with Family Downstream** (Children, spouse, younger generation).
+  - Built-in HTML5 Canvas image compressor (`compressImage`) reducing camera uploads to ~60KB - 120KB WebP.
+  - Integrated Firebase Storage bucket (`ancestry-arc.firebasestorage.app`) with automatic offline data URL fallback and external URL support (ImgBB, Cloudinary).
 - [x] **Automated GitHub Actions Deployment**:
   - Created `.github/workflows/deploy.yml` to automatically build and deploy `master` commits to GitHub Pages on every push.
   - Live deployed at `https://schaw.github.io/AncestryArc/` and configured for Firebase Hosting `https://family-arc.web.app/`.
