@@ -240,6 +240,9 @@ export default function PhotoUploader({ photos = {}, onChange, disabled = false,
           );
         })}
       </div>
+      <div style={{ marginTop: '6px', fontSize: '0.72rem', color: 'var(--text-hint)', textAlign: 'right' }}>
+        📸 Auto-compressed WebP • Free Lifetime Storage (No Credit Card)
+      </div>
     </div>
   );
 }
