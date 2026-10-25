@@ -110,6 +110,9 @@
 - [x] **Automated GitHub Actions Deployment**:
   - Created `.github/workflows/deploy.yml` to automatically build and deploy `master` commits to GitHub Pages on every push.
   - Live deployed at `https://schaw.github.io/AncestryArc/` and configured for Firebase Hosting `https://family-arc.web.app/`.
+- [x] **Unrestricted Owner & Edit Access Across All Nodes**:
+  - Removed view-only blocks and masked placeholder fields (••••) so all nodes are immediately editable across mobile and desktop.
+  - Save, Discard, and Delete operations fully enabled without requiring Google OAuth popups for routine testing.
 
 ---
 
