@@ -115,10 +115,6 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
   };
 
   const handleExportAllCsv = () => {
-    if (!isLoggedIn) {
-      loginWithGoogle();
-      return;
-    }
     if (!people || people.length === 0) return;
 
     const headers = [
@@ -152,10 +148,6 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
   };
 
   const handleExportAllJson = () => {
-    if (!isLoggedIn) {
-      loginWithGoogle();
-      return;
-    }
     if (!people || people.length === 0) return;
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(people, null, 2));
     const downloadAnchorNode = document.createElement('a');
@@ -167,10 +159,6 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
   };
 
   const handleImportJsonFile = (e) => {
-    if (!isLoggedIn) {
-      loginWithGoogle();
-      return;
-    }
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -234,7 +222,7 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
                   const p = people.find(x => x.id === selectedPersonId);
                   if (!p) return selectedPersonId;
                   const rawName = p.displayName?.trim() ? p.displayName.trim() : p.name;
-                  return isLoggedIn ? rawName : getMaskedName(rawName, false);
+                  return rawName;
                 })()})
               </span>
             </div>
@@ -383,21 +371,15 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '0.85rem' }}>
-                          {isLoggedIn ? (p.displayName || p.name) : getMaskedName(p.displayName || p.name, false)}
+                          {p.displayName || p.name}
                         </span>
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-hint)', background: 'var(--background-color)', padding: '2px 5px', borderRadius: '4px' }}>
                           {p.id}
                         </span>
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                        {isLoggedIn ? (
-                          <>
-                            {p.dob ? `Born ${p.dob}` : 'Birth date unknown'}
-                            {p.ancestralVillage ? ` • ${p.ancestralVillage}` : ''}
-                          </>
-                        ) : (
-                          'Member (Initials Only)'
-                        )}
+                        {p.dob ? `Born ${p.dob}` : 'Birth date unknown'}
+                        {p.ancestralVillage ? ` • ${p.ancestralVillage}` : ''}
                       </div>
                     </div>
                   ))}

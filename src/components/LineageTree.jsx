@@ -14,22 +14,19 @@ const getInitials = (name) => {
 
 const CustomPersonNode = ({ data }) => {
   const isRoot = data.isRoot;
-  const isLoggedIn = data.isLoggedIn;
 
-  // If public viewer, strictly show initials (e.g. "R. P. K.")
-  const rawName = data.displayName?.trim() ? data.displayName.trim() : data.name;
-  const primaryName = isLoggedIn ? rawName : getMaskedName(rawName, false);
+  // Unconditionally show full name without masking
+  const rawName = data.displayName?.trim() ? data.displayName.trim() : (data.name || '');
+  const primaryName = rawName;
 
-  // Subtitle: only show nickname, birth year, or village if authenticated
+  // Subtitle: nickname, birth year, or village
   let subtitle = null;
-  if (isLoggedIn) {
-    if (data.nickname?.trim()) {
-      subtitle = `"${data.nickname.trim()}"`;
-    } else if (data.dob?.trim()) {
-      subtitle = `b. ${data.dob.trim().slice(0, 4)}`;
-    } else if (data.ancestralVillage?.trim()) {
-      subtitle = data.ancestralVillage.trim();
-    }
+  if (data.nickname?.trim()) {
+    subtitle = `"${data.nickname.trim()}"`;
+  } else if (data.dob?.trim()) {
+    subtitle = `b. ${data.dob.trim().slice(0, 4)}`;
+  } else if (data.ancestralVillage?.trim()) {
+    subtitle = data.ancestralVillage.trim();
   }
 
   return (
@@ -54,8 +51,8 @@ const CustomPersonNode = ({ data }) => {
         width: '36px',
         height: '36px',
         borderRadius: '50%',
-        background: (isLoggedIn && data.img) ? 'transparent' : (isRoot ? 'linear-gradient(135deg, #f472b6 0%, #db2777 100%)' : 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)'),
-        backgroundImage: (isLoggedIn && data.img) ? `url(${data.img})` : 'none',
+        background: data.img ? 'transparent' : (isRoot ? 'linear-gradient(135deg, #f472b6 0%, #db2777 100%)' : 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)'),
+        backgroundImage: data.img ? `url(${data.img})` : 'none',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         color: '#fff',
@@ -67,7 +64,7 @@ const CustomPersonNode = ({ data }) => {
         flexShrink: 0,
         boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
       }}>
-        {(!isLoggedIn || !data.img) && data.initials}
+        {!data.img && data.initials}
       </div>
 
       {/* Details (Name + Subtitle if present) */}

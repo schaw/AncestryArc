@@ -29,7 +29,7 @@ const SearchableParentInput = ({ value, onChange, placeholder, people, isLoggedI
   const [query, setQuery] = useState('');
 
   const filtered = (people || []).filter(p => {
-    const targetName = isLoggedIn ? (p.displayName || p.name) : getMaskedName(p.displayName || p.name, false);
+    const targetName = (p.displayName || p.name);
     return targetName.toLowerCase().includes(query.toLowerCase()) || p.id.toLowerCase().includes(query.toLowerCase());
   }).slice(0, 5);
 
@@ -81,7 +81,7 @@ const SearchableParentInput = ({ value, onChange, placeholder, people, isLoggedI
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
               <div style={{ fontWeight: 'bold' }}>
-                {isLoggedIn ? (p.displayName || p.name) : getMaskedName(p.displayName || p.name, false)}
+                {p.displayName || p.name}
               </div>
               <div style={{ color: 'var(--text-secondary)' }}>ID: {p.id}</div>
             </div>
@@ -149,10 +149,6 @@ export default function BulkEntry({ onAddBulk, currentUser, people }) {
   };
 
   const handleSave = () => {
-    if (!isLoggedIn) {
-      loginWithGoogle();
-      return;
-    }
     const validRows = rows.filter(r => r.name.trim() !== '');
     
     // 1. Generate real IDs for all valid rows
@@ -214,32 +210,6 @@ export default function BulkEntry({ onAddBulk, currentUser, people }) {
 
   return (
     <div style={{ padding: '24px 0' }}>
-      {!isLoggedIn && (
-        <div style={{
-          padding: '16px',
-          backgroundColor: 'rgba(124, 58, 237, 0.08)',
-          border: '1px solid rgba(124, 58, 237, 0.2)',
-          borderRadius: '12px',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px'
-        }}>
-          <div>
-            <div style={{ fontWeight: 700, color: 'var(--primary-color)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Lock size={16} /> Google Sign-In Required to Save Bulk Lineage
-            </div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              You are currently browsing in guest mode. Please sign in with Google to save entries directly to the family cloud database.
-            </div>
-          </div>
-          <button type="button" onClick={loginWithGoogle} className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>
-            Sign In with Google
-          </button>
-        </div>
-      )}
-
       <div className="d-flex align-center justify-between mb-4">
         <div>
           <h2 style={{ margin: 0 }}>Bulk Spreadsheet Entry</h2>

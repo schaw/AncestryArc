@@ -128,14 +128,14 @@ export default function SocialLinksEditor({ links = [], onChange, disabled = fal
                 type="text"
                 className="form-control"
                 placeholder={platformInfo.placeholder}
-                value={isLoggedIn ? link.url : '••••••••'}
+                value={link.url || ''}
                 onChange={(e) => handleUpdate(index, 'url', e.target.value)}
                 disabled={disabled}
                 style={{ flex: 1, minWidth: '130px', padding: '6px 10px', fontSize: '0.85rem' }}
               />
 
               {/* Quick View / Test Link */}
-              {link.url && isLoggedIn && (
+              {link.url && (
                 <a
                   href={href}
                   target="_blank"

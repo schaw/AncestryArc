@@ -267,32 +267,6 @@ export default function PersonInput({ people, onSave, initialData = null, curren
 
   return (
     <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
-      {!isLoggedIn && (
-        <div style={{
-          padding: '16px',
-          backgroundColor: 'rgba(124, 58, 237, 0.08)',
-          border: '1px solid rgba(124, 58, 237, 0.2)',
-          borderRadius: '12px',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px'
-        }}>
-          <div>
-            <div style={{ fontWeight: 700, color: 'var(--primary-color)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Lock size={16} /> Sign In Required to Save
-            </div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              You are currently viewing in guest mode. Please sign in with Google to add or update family members in the database.
-            </div>
-          </div>
-          <button type="button" onClick={loginWithGoogle} className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>
-            Sign In with Google
-          </button>
-        </div>
-      )}
-
       <div className="d-flex align-center justify-between mb-4">
         <h2 style={{ margin: 0 }}>{isEditing ? 'Edit Person' : 'Add Person to Lineage'}</h2>
         <div className="d-flex align-center gap-2" style={{ backgroundColor: 'rgba(98,0,234,0.1)', padding: '8px 16px', borderRadius: '16px', color: 'var(--primary-color)', fontWeight: 'bold' }}>
@@ -315,8 +289,8 @@ export default function PersonInput({ people, onSave, initialData = null, curren
           <PhotoUploader 
             photos={formData.photos || {}} 
             onChange={(p) => setFormData(prev => ({ ...prev, photos: p }))} 
-            disabled={!isLoggedIn} 
-            isLoggedIn={isLoggedIn} 
+            disabled={false} 
+            isLoggedIn={true} 
             personId={formData.id} 
           />
         </div>
@@ -452,8 +426,8 @@ export default function PersonInput({ people, onSave, initialData = null, curren
           <SocialLinksEditor 
             links={formData.socialLinks || []} 
             onChange={(links) => setFormData(prev => ({ ...prev, socialLinks: links }))} 
-            disabled={!isLoggedIn} 
-            isLoggedIn={isLoggedIn} 
+            disabled={false} 
+            isLoggedIn={true} 
           />
         </div>
 
@@ -487,7 +461,7 @@ export default function PersonInput({ people, onSave, initialData = null, curren
             <input type="checkbox" name="isPublic" checked={formData.isPublic} onChange={handleChange} />
             Make this person's record public
           </label>
-          <button type="submit" className="btn btn-primary" disabled={!isLoggedIn || saveStatus === 'saving' || saveStatus === 'saved'}>
+          <button type="submit" className="btn btn-primary" disabled={saveStatus === 'saving' || saveStatus === 'saved'}>
             {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? <><Check size={18} /> Saved!</> : <><Save size={18} /> {isEditing ? 'Update Person' : 'Save Person'}</>}
           </button>
         </div>
