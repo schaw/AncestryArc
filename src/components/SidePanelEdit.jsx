@@ -94,7 +94,8 @@ const ParentIdInput = ({ value, onChange, disabled, placeholder, people, isLogge
 export default function SidePanelEdit({ person, people = [], onSave, onDiscard, onDelete, currentUser }) {
   const { user, loginWithGoogle } = useAuth();
   const isLoggedIn = Boolean(user);
-  const isOwner = isLoggedIn && (person.createdBy === currentUser || currentUser === 'keshavkarn' || !person.createdBy || person.createdBy === 'system');
+  // Authenticated user has full owner / co-admin edit access for all nodes
+  const isOwner = isLoggedIn;
   const [copiedId, setCopiedId] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
