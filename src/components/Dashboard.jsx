@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Search, Download, Users, Layers, GitFork, MapPin, Plus, X, Maximize2, Minimize2, BarChart2, Upload } from 'lucide-react';
+import { Search, Download, Users, Layers, GitFork, MapPin, Plus, X, Maximize2, Minimize2, BarChart2, Upload, MoreHorizontal } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlobalGraph from './GlobalGraph';
@@ -17,8 +17,35 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [showStatsDrawer, setShowStatsDrawer] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const searchContainerRef = useRef(null);
   const fileInputRef = useRef(null);
+  const mobileMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target)) {
+        setShowMobileMenu(false);
+      }
+    };
+    if (showMobileMenu) {
+      document.addEventListener('mousedown', handleOutsideClick);
+      document.addEventListener('touchstart', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
+  }, [showMobileMenu]);
 
   // Close search dropdown on click outside
   useEffect(() => {
@@ -189,298 +216,539 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
           alignItems: 'center', 
           justifyContent: 'space-between', 
           flexWrap: 'wrap', 
-          gap: '10px',
+          gap: isMobile ? '8px' : '10px',
           background: 'var(--surface-color)',
-          padding: '10px 16px',
+          padding: isMobile ? '8px 10px' : '10px 16px',
           borderRadius: '14px',
           border: '1px solid var(--border-color)',
           boxShadow: 'var(--elevation-1)'
         }}
       >
-        {/* Left: View Switcher Tabs + Generational Toggle */}
-        <div className="toolbar-left" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {!selectedPersonId ? (
-            <div className="tab-bar">
-              <button 
-                className={`tab ${activeView === 'web' ? 'active' : ''}`}
-                onClick={() => setActiveView('web')}
-              >
-                Global Web
-              </button>
-              <button 
-                className={`tab ${activeView === 'tree' ? 'active' : ''}`}
-                onClick={() => setActiveView('tree')}
-              >
-                Full Lineage Tree
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>Focused Lineage</span>
-              <span style={{ color: 'var(--text-hint)', fontSize: '0.8rem' }}>
-                ({(() => {
-                  const p = people.find(x => x.id === selectedPersonId);
-                  if (!p) return selectedPersonId;
-                  const rawName = p.displayName?.trim() ? p.displayName.trim() : p.name;
-                  return rawName;
-                })()})
-              </span>
-            </div>
-          )}
+        {isMobile ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+            {/* Mobile Row 1: View Switcher Tabs + Generational Toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', width: '100%' }}>
+              {!selectedPersonId ? (
+                <div className="tab-bar" style={{ flex: 1, minWidth: 0, margin: 0 }}>
+                  <button 
+                    className={`tab ${activeView === 'web' ? 'active' : ''}`}
+                    onClick={() => setActiveView('web')}
+                    style={{ flex: 1, padding: '7px 8px', fontSize: '0.78rem', textAlign: 'center' }}
+                  >
+                    Global Web
+                  </button>
+                  <button 
+                    className={`tab ${activeView === 'tree' ? 'active' : ''}`}
+                    onClick={() => setActiveView('tree')}
+                    style={{ flex: 1, padding: '7px 8px', fontSize: '0.78rem', textAlign: 'center' }}
+                  >
+                    Lineage Tree
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, overflow: 'hidden' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap' }}>Focused:</span>
+                  <span style={{ color: 'var(--primary-color)', fontSize: '0.82rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {(() => {
+                      const p = people.find(x => x.id === selectedPersonId);
+                      return p ? (p.displayName || p.name) : selectedPersonId;
+                    })()}
+                  </span>
+                </div>
+              )}
 
-          {activeView === 'web' && !selectedPersonId && (
-            <div 
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '8px',
-                padding: '4px 10px', 
-                background: 'var(--background-color)', 
-                borderRadius: '10px',
-                border: '1px solid var(--border-color)'
-              }}
-            >
-              <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
-                Generational Gravity:
-              </span>
-              <button 
-                type="button"
-                className={`toggle-switch ${isGenerational ? 'active' : ''}`}
-                onClick={() => setIsGenerational(!isGenerational)}
-                title="Toggle generational gravity"
-                aria-label="Toggle generational layering"
-              />
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isGenerational ? 'var(--primary-color)' : 'var(--text-hint)' }}>
-                {isGenerational ? 'ON' : 'OFF'}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Center: Minimalist Stats Capsule */}
-        {people.length > 0 && (
-          <div 
-            className="toolbar-center"
-            onClick={() => setShowStatsDrawer(!showStatsDrawer)}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '10px',
-              padding: '6px 14px', 
-              borderRadius: '20px', 
-              background: 'var(--background-color)',
-              border: '1px solid var(--border-color)',
-              cursor: 'pointer',
-              fontSize: '0.82rem',
-              fontWeight: 500,
-              color: 'var(--text-secondary)',
-              transition: 'all 0.2s ease',
-              overflowX: 'auto',
-              whiteSpace: 'nowrap'
-            }}
-            title="Click to view detailed metrics breakdown"
-          >
-            <BarChart2 size={15} color="var(--primary-color)" style={{ flexShrink: 0 }} />
-            <span><strong style={{ color: 'var(--text-primary)' }}>{stats.totalPeople}</strong> Members</span>
-            <span>•</span>
-            <span><strong style={{ color: 'var(--text-primary)' }}>{stats.generations}</strong> Gen</span>
-            <span>•</span>
-            <span><strong style={{ color: 'var(--text-primary)' }}>{stats.relationships}</strong> Links</span>
-          </div>
-        )}
-
-        {/* Right: Actions & Maximize Control */}
-        <div className="toolbar-right" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          {/* Search Dropdown */}
-          <div ref={searchContainerRef} className="toolbar-search" style={{ position: 'relative', minWidth: '180px', flex: '1 1 auto' }}>
-            <div 
-              style={{ 
-                display: 'flex',
-                alignItems: 'center',
-                backgroundColor: 'var(--background-color)', 
-                borderRadius: '10px', 
-                padding: '6px 10px', 
-                border: '1px solid var(--border-color)',
-                width: '100%'
-              }}
-            >
-              <Search size={15} color="var(--text-secondary)" style={{ marginRight: '6px', flexShrink: 0 }} />
-              <input 
-                type="text" 
-                placeholder="Find member..." 
-                value={searchQuery}
-                onFocus={() => setIsSearchOpen(true)}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setIsSearchOpen(true);
-                }}
-                style={{ 
-                  border: 'none', 
-                  outline: 'none', 
-                  background: 'transparent', 
-                  width: '100%', 
-                  color: 'var(--text-primary)',
-                  fontSize: '0.82rem'
-                }}
-              />
-              {searchQuery && (
+              {activeView === 'web' && !selectedPersonId && (
                 <button 
-                  onClick={() => { setSearchQuery(''); setIsSearchOpen(false); }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: 'var(--text-hint)' }}
+                  type="button"
+                  onClick={() => setIsGenerational(!isGenerational)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '6px 10px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    background: isGenerational ? 'var(--primary-light)' : 'var(--background-color)',
+                    color: isGenerational ? 'var(--primary-color)' : 'var(--text-secondary)',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}
+                  title="Toggle generational hierarchy"
                 >
-                  <X size={13} />
+                  <Layers size={13} />
+                  <span>Gen: {isGenerational ? 'ON' : 'OFF'}</span>
                 </button>
               )}
             </div>
-            
-            <AnimatePresence>
-              {isSearchOpen && searchResults.length > 0 && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.15 }}
+
+            {/* Mobile Row 2: Search Input + Quick Add + More Menu */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+              <div ref={searchContainerRef} style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+                <div 
                   style={{ 
-                    position: 'absolute', 
-                    top: 'calc(100% + 6px)', 
-                    right: 0, 
-                    width: '300px', 
-                    backgroundColor: 'var(--surface-color)', 
-                    boxShadow: 'var(--elevation-3)', 
-                    borderRadius: '12px', 
+                    display: 'flex',
+                    alignItems: 'center',
+                    backgroundColor: 'var(--background-color)', 
+                    borderRadius: '8px', 
+                    padding: '6px 10px', 
                     border: '1px solid var(--border-color)',
-                    zIndex: 100, 
-                    overflow: 'hidden' 
+                    width: '100%'
                   }}
                 >
-                  <div style={{ padding: '8px 12px', fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-hint)', borderBottom: '1px solid var(--border-color)' }}>
-                    MATCHING MEMBERS ({searchResults.length})
-                  </div>
-                  {searchResults.map(p => (
-                    <div 
-                      key={p.id} 
-                      onClick={() => handleSelectSearchResult(p.id)}
-                      style={{ 
-                        padding: '9px 12px', 
-                        cursor: 'pointer', 
-                        borderBottom: '1px solid var(--border-color)',
-                        transition: 'background-color 0.15s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-light)'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  <Search size={14} color="var(--text-secondary)" style={{ marginRight: '6px', flexShrink: 0 }} />
+                  <input 
+                    type="text" 
+                    placeholder="Search person..." 
+                    value={searchQuery}
+                    onFocus={() => setIsSearchOpen(true)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setIsSearchOpen(true);
+                    }}
+                    style={{ 
+                      border: 'none', 
+                      outline: 'none', 
+                      background: 'transparent', 
+                      width: '100%', 
+                      color: 'var(--text-primary)',
+                      fontSize: '0.85rem'
+                    }}
+                  />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => { setSearchQuery(''); setIsSearchOpen(false); }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: 'var(--text-hint)' }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '0.85rem' }}>
-                          {p.displayName || p.name}
-                        </span>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-hint)', background: 'var(--background-color)', padding: '2px 5px', borderRadius: '4px' }}>
-                          {p.id}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                        {p.dob ? `Born ${p.dob}` : 'Birth date unknown'}
-                        {p.ancestralVillage ? ` • ${p.ancestralVillage}` : ''}
-                      </div>
-                    </div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+
+                <AnimatePresence>
+                  {isSearchOpen && searchResults.length > 0 && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      style={{ 
+                        position: 'absolute', 
+                        top: 'calc(100% + 4px)', 
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'var(--surface-color)', 
+                        boxShadow: 'var(--elevation-3)', 
+                        borderRadius: '10px', 
+                        border: '1px solid var(--border-color)',
+                        zIndex: 200, 
+                        maxHeight: '220px',
+                        overflowY: 'auto'
+                      }}
+                    >
+                      {searchResults.map(p => (
+                        <div 
+                          key={p.id} 
+                          onClick={() => handleSelectSearchResult(p.id)}
+                          style={{ 
+                            padding: '8px 12px', 
+                            cursor: 'pointer', 
+                            borderBottom: '1px solid var(--border-color)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--text-primary)' }}>
+                              {p.displayName || p.name}
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-hint)' }}>
+                              {p.ancestralVillage || p.dob ? `${p.ancestralVillage || ''} ${p.dob ? `(${p.dob})` : ''}` : `ID: ${p.id}`}
+                            </div>
+                          </div>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--primary-color)', fontWeight: 600 }}>Select</span>
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Quick Add */}
+              <Link 
+                to="/add" 
+                className="btn btn-primary" 
+                style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '8px', flexShrink: 0, gap: '4px' }}
+                title="Add Person"
+              >
+                <Plus size={14} />
+                <span>Add</span>
+              </Link>
+
+              {/* More Actions Dropdown */}
+              <div ref={mobileMenuRef} style={{ position: 'relative', flexShrink: 0 }}>
+                <button 
+                  type="button" 
+                  className="btn btn-outline"
+                  onClick={() => setShowMobileMenu(!showMobileMenu)}
+                  style={{ padding: '6px 10px', borderRadius: '8px', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+                  title="More actions"
+                >
+                  <MoreHorizontal size={16} />
+                </button>
+
+                {showMobileMenu && (
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 6px)',
+                      right: 0,
+                      width: '210px',
+                      backgroundColor: 'var(--surface-color)',
+                      boxShadow: 'var(--elevation-3)',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border-color)',
+                      zIndex: 300,
+                      padding: '6px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px'
+                    }}
+                  >
+                    <button 
+                      onClick={() => { setShowStatsDrawer(!showStatsDrawer); setShowMobileMenu(false); }}
+                      className="btn btn-text"
+                      style={{ justifyContent: 'flex-start', padding: '8px 10px', fontSize: '0.8rem', width: '100%', gap: '8px' }}
+                    >
+                      <BarChart2 size={15} color="var(--primary-color)" />
+                      <span>Family Metrics ({stats.totalPeople})</span>
+                    </button>
+                    <button 
+                      onClick={() => { handleExportAllJson(); setShowMobileMenu(false); }}
+                      className="btn btn-text"
+                      style={{ justifyContent: 'flex-start', padding: '8px 10px', fontSize: '0.8rem', width: '100%', gap: '8px' }}
+                    >
+                      <Download size={15} color="var(--primary-color)" />
+                      <span>Export JSON Backup</span>
+                    </button>
+                    <button 
+                      onClick={() => { handleExportAllCsv(); setShowMobileMenu(false); }}
+                      className="btn btn-text"
+                      style={{ justifyContent: 'flex-start', padding: '8px 10px', fontSize: '0.8rem', width: '100%', gap: '8px' }}
+                    >
+                      <Download size={15} color="var(--secondary-color)" />
+                      <span>Export CSV</span>
+                    </button>
+                    <button 
+                      onClick={() => { fileInputRef.current?.click(); setShowMobileMenu(false); }}
+                      className="btn btn-text"
+                      style={{ justifyContent: 'flex-start', padding: '8px 10px', fontSize: '0.8rem', width: '100%', gap: '8px' }}
+                    >
+                      <Upload size={15} color="var(--text-secondary)" />
+                      <span>Import JSON Tree</span>
+                    </button>
+                    <button 
+                      onClick={() => { setIsMaximized(!isMaximized); setShowMobileMenu(false); }}
+                      className="btn btn-text"
+                      style={{ justifyContent: 'flex-start', padding: '8px 10px', fontSize: '0.8rem', width: '100%', gap: '8px' }}
+                    >
+                      <Maximize2 size={15} color="var(--accent-color)" />
+                      <span>{isMaximized ? "Exit Fullscreen" : "Fullscreen Canvas"}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
+        ) : (
+          <>
+            {/* Left: View Switcher Tabs + Generational Toggle */}
+            <div className="toolbar-left" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              {!selectedPersonId ? (
+                <div className="tab-bar">
+                  <button 
+                    className={`tab ${activeView === 'web' ? 'active' : ''}`}
+                    onClick={() => setActiveView('web')}
+                  >
+                    Global Web
+                  </button>
+                  <button 
+                    className={`tab ${activeView === 'tree' ? 'active' : ''}`}
+                    onClick={() => setActiveView('tree')}
+                  >
+                    Full Lineage Tree
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>Focused Lineage</span>
+                  <span style={{ color: 'var(--text-hint)', fontSize: '0.8rem' }}>
+                    ({(() => {
+                      const p = people.find(x => x.id === selectedPersonId);
+                      if (!p) return selectedPersonId;
+                      const rawName = p.displayName?.trim() ? p.displayName.trim() : p.name;
+                      return rawName;
+                    })()})
+                  </span>
+                </div>
+              )}
 
-          {/* Quick Add */}
-          <Link 
-            to="/add" 
-            className="btn btn-primary" 
-            style={{ padding: '7px 12px', fontSize: '0.8rem', borderRadius: '10px' }}
-            title="Add Person"
-          >
-            <Plus size={15} />
-            <span>Add</span>
-          </Link>
+              {activeView === 'web' && !selectedPersonId && (
+                <div 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px',
+                    padding: '4px 10px', 
+                    background: 'var(--background-color)', 
+                    borderRadius: '10px',
+                    border: '1px solid var(--border-color)'
+                  }}
+                >
+                  <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+                    Generational Gravity:
+                  </span>
+                  <button 
+                    type="button"
+                    className={`toggle-switch ${isGenerational ? 'active' : ''}`}
+                    onClick={() => setIsGenerational(!isGenerational)}
+                    title="Toggle generational gravity"
+                    aria-label="Toggle generational layering"
+                  />
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isGenerational ? 'var(--primary-color)' : 'var(--text-hint)' }}>
+                    {isGenerational ? 'ON' : 'OFF'}
+                  </span>
+                </div>
+              )}
+            </div>
 
-          {/* Export JSON Backup */}
-          {!selectedPersonId && people.length > 0 && (
-            <button 
-              className="btn btn-outline" 
-              style={{ 
-                borderRadius: '10px', 
-                padding: '7px 10px', 
-                fontSize: '0.8rem',
-                borderColor: 'var(--border-color)',
-                color: 'var(--text-primary)'
-              }} 
-              title="Export Full JSON Backup" 
-              onClick={handleExportAllJson}
-            >
-              <Download size={15} color="var(--primary-color)" />
-              <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>JSON</span>
-            </button>
-          )}
+            {/* Center: Minimalist Stats Capsule */}
+            {people.length > 0 && (
+              <div 
+                className="toolbar-center"
+                onClick={() => setShowStatsDrawer(!showStatsDrawer)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '10px',
+                  padding: '6px 14px', 
+                  borderRadius: '20px', 
+                  background: 'var(--background-color)',
+                  border: '1px solid var(--border-color)',
+                  cursor: 'pointer',
+                  fontSize: '0.82rem',
+                  fontWeight: 500,
+                  color: 'var(--text-secondary)',
+                  transition: 'all 0.2s ease',
+                  overflowX: 'auto',
+                  whiteSpace: 'nowrap'
+                }}
+                title="Click to view detailed metrics breakdown"
+              >
+                <BarChart2 size={15} color="var(--primary-color)" style={{ flexShrink: 0 }} />
+                <span><strong style={{ color: 'var(--text-primary)' }}>{stats.totalPeople}</strong> Members</span>
+                <span>•</span>
+                <span><strong style={{ color: 'var(--text-primary)' }}>{stats.generations}</strong> Gen</span>
+                <span>•</span>
+                <span><strong style={{ color: 'var(--text-primary)' }}>{stats.relationships}</strong> Links</span>
+              </div>
+            )}
 
-          {/* Export CSV */}
-          {!selectedPersonId && people.length > 0 && (
-            <button 
-              className="btn btn-outline" 
-              style={{ 
-                borderRadius: '10px', 
-                padding: '7px 10px', 
-                fontSize: '0.8rem',
-                borderColor: 'var(--border-color)',
-                color: 'var(--text-primary)'
-              }} 
-              title="Export all members to CSV" 
-              onClick={handleExportAllCsv}
-            >
-              <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>CSV</span>
-            </button>
-          )}
+            {/* Right: Actions & Maximize Control */}
+            <div className="toolbar-right" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {/* Search Dropdown */}
+              <div ref={searchContainerRef} className="toolbar-search" style={{ position: 'relative', minWidth: '180px', flex: '1 1 auto' }}>
+                <div 
+                  style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    backgroundColor: 'var(--background-color)', 
+                    borderRadius: '10px', 
+                    padding: '6px 10px', 
+                    border: '1px solid var(--border-color)',
+                    width: '100%'
+                  }}
+                >
+                  <Search size={15} color="var(--text-secondary)" style={{ marginRight: '6px', flexShrink: 0 }} />
+                  <input 
+                    type="text" 
+                    placeholder="Find member..." 
+                    value={searchQuery}
+                    onFocus={() => setIsSearchOpen(true)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setIsSearchOpen(true);
+                    }}
+                    style={{ 
+                      border: 'none', 
+                      outline: 'none', 
+                      background: 'transparent', 
+                      width: '100%', 
+                      color: 'var(--text-primary)',
+                      fontSize: '0.82rem'
+                    }}
+                  />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => { setSearchQuery(''); setIsSearchOpen(false); }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: 'var(--text-hint)' }}
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+                
+                <AnimatePresence>
+                  {isSearchOpen && searchResults.length > 0 && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.15 }}
+                      style={{ 
+                        position: 'absolute', 
+                        top: 'calc(100% + 6px)', 
+                        right: 0, 
+                        width: '300px', 
+                        backgroundColor: 'var(--surface-color)', 
+                        boxShadow: 'var(--elevation-3)', 
+                        borderRadius: '12px', 
+                        border: '1px solid var(--border-color)',
+                        zIndex: 100, 
+                        overflow: 'hidden' 
+                      }}
+                    >
+                      <div style={{ padding: '8px 12px', fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-hint)', borderBottom: '1px solid var(--border-color)' }}>
+                        MATCHING MEMBERS ({searchResults.length})
+                      </div>
+                      {searchResults.map(p => (
+                        <div 
+                          key={p.id} 
+                          onClick={() => handleSelectSearchResult(p.id)}
+                          style={{ 
+                            padding: '9px 12px', 
+                            cursor: 'pointer', 
+                            borderBottom: '1px solid var(--border-color)',
+                            transition: 'background-color 0.15s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-light)'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '0.85rem' }}>
+                              {p.displayName || p.name}
+                            </span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-hint)', background: 'var(--background-color)', padding: '2px 5px', borderRadius: '4px' }}>
+                              {p.id}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                            {p.dob ? `Born ${p.dob}` : 'Birth date unknown'}
+                            {p.ancestralVillage ? ` • ${p.ancestralVillage}` : ''}
+                          </div>
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
-          {/* Import JSON File */}
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            accept=".json" 
-            onChange={handleImportJsonFile} 
-            style={{ display: 'none' }} 
-          />
-          <button 
-            type="button"
-            className="btn btn-outline"
-            style={{ 
-              borderRadius: '10px', 
-              padding: '7px 10px', 
-              fontSize: '0.8rem',
-              borderColor: 'var(--border-color)',
-              color: 'var(--text-secondary)'
-            }}
-            title="Import/Restore JSON Tree"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload size={15} />
-          </button>
+              {/* Quick Add */}
+              <Link 
+                to="/add" 
+                className="btn btn-primary" 
+                style={{ padding: '7px 12px', fontSize: '0.8rem', borderRadius: '10px' }}
+                title="Add Person"
+              >
+                <Plus size={15} />
+                <span>Add</span>
+              </Link>
 
-          {/* Maximize Fullscreen Canvas Toggle */}
-          <button 
-            type="button"
-            className="btn btn-outline"
-            onClick={() => setIsMaximized(!isMaximized)}
-            style={{ 
-              borderRadius: '10px', 
-              padding: '7px 10px', 
-              fontSize: '0.8rem',
-              borderColor: 'var(--border-color)',
-              color: isMaximized ? 'var(--primary-color)' : 'var(--text-secondary)',
-              background: isMaximized ? 'var(--primary-light)' : 'transparent'
-            }}
-            title={isMaximized ? "Exit Fullscreen (Esc)" : "Maximize Flow (Fullscreen)"}
-            aria-label="Maximize graph view"
-          >
-            {isMaximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-          </button>
-        </div>
+              {/* Export JSON Backup */}
+              {!selectedPersonId && people.length > 0 && (
+                <button 
+                  className="btn btn-outline" 
+                  style={{ 
+                    borderRadius: '10px', 
+                    padding: '7px 10px', 
+                    fontSize: '0.8rem',
+                    borderColor: 'var(--border-color)',
+                    color: 'var(--text-primary)'
+                  }} 
+                  title="Export Full JSON Backup" 
+                  onClick={handleExportAllJson}
+                >
+                  <Download size={15} color="var(--primary-color)" />
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>JSON</span>
+                </button>
+              )}
+
+              {/* Export CSV */}
+              {!selectedPersonId && people.length > 0 && (
+                <button 
+                  className="btn btn-outline" 
+                  style={{ 
+                    borderRadius: '10px', 
+                    padding: '7px 10px', 
+                    fontSize: '0.8rem',
+                    borderColor: 'var(--border-color)',
+                    color: 'var(--text-primary)'
+                  }} 
+                  title="Export all members to CSV" 
+                  onClick={handleExportAllCsv}
+                >
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>CSV</span>
+                </button>
+              )}
+
+              {/* Import JSON File */}
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                accept=".json" 
+                onChange={handleImportJsonFile} 
+                style={{ display: 'none' }} 
+              />
+              <button 
+                type="button"
+                className="btn btn-outline"
+                style={{ 
+                  borderRadius: '10px', 
+                  padding: '7px 10px', 
+                  fontSize: '0.8rem',
+                  borderColor: 'var(--border-color)',
+                  color: 'var(--text-secondary)'
+                }}
+                title="Import/Restore JSON Tree"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload size={15} />
+              </button>
+
+              {/* Maximize Fullscreen Canvas Toggle */}
+              <button 
+                type="button"
+                className="btn btn-outline"
+                onClick={() => setIsMaximized(!isMaximized)}
+                style={{ 
+                  borderRadius: '10px', 
+                  padding: '7px 10px', 
+                  fontSize: '0.8rem',
+                  borderColor: 'var(--border-color)',
+                  color: isMaximized ? 'var(--primary-color)' : 'var(--text-secondary)',
+                  background: isMaximized ? 'var(--primary-light)' : 'transparent'
+                }}
+                title={isMaximized ? "Exit Fullscreen (Esc)" : "Maximize Flow (Fullscreen)"}
+                aria-label="Maximize graph view"
+              >
+                {isMaximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+              </button>
+            </div>
+          </>
+        )}
       </div>
-
       {/* Optional Collapsible Stats Drawer */}
       <AnimatePresence>
         {showStatsDrawer && (
@@ -544,7 +812,8 @@ export default function Dashboard({ people, onUpdate, onDelete, onImportPeople, 
             top: isMaximized ? 0 : 'auto',
             left: isMaximized ? 0 : 'auto',
             width: isMaximized ? '100vw' : '100%',
-            height: isMaximized ? '100vh' : 'calc(100vh - 145px)',
+            height: isMaximized ? '100vh' : (isMobile ? 'calc(100dvh - 175px)' : 'calc(100vh - 145px)'),
+            minHeight: isMobile ? '380px' : '500px',
             zIndex: isMaximized ? 1000 : 1,
             backgroundColor: 'var(--background-color)',
             borderRadius: isMaximized ? 0 : '16px',

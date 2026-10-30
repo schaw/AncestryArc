@@ -24,7 +24,7 @@ function Navigation() {
   const location = useLocation();
   
   return (
-    <nav className="app-bar-nav">
+    <nav className="app-bar-nav desktop-nav">
       <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
         <div className="d-flex align-center gap-2">
           <Users size={16} />
@@ -42,6 +42,27 @@ function Navigation() {
           <Table size={16} />
           <span>Bulk Entry</span>
         </div>
+      </Link>
+    </nav>
+  );
+}
+
+function MobileBottomNav() {
+  const location = useLocation();
+
+  return (
+    <nav className="mobile-bottom-nav" aria-label="Mobile Navigation">
+      <Link to="/" className={`mobile-nav-item ${location.pathname === '/' ? 'active' : ''}`}>
+        <Users size={19} />
+        <span>Tree & Web</span>
+      </Link>
+      <Link to="/add" className={`mobile-nav-item ${location.pathname === '/add' ? 'active' : ''}`}>
+        <UserPlus size={19} />
+        <span>Add Person</span>
+      </Link>
+      <Link to="/bulk" className={`mobile-nav-item ${location.pathname === '/bulk' ? 'active' : ''}`}>
+        <Table size={19} />
+        <span>Bulk Entry</span>
       </Link>
     </nav>
   );
@@ -221,7 +242,7 @@ function AppContent() {
         </div>
       </header>
 
-      <main style={{ maxWidth: '100%', padding: '16px 20px' }}>
+      <main className="app-main-content">
         <AnimatedRoutes
           people={people}
           addPerson={addPerson}
@@ -232,6 +253,8 @@ function AppContent() {
           activeUser={activeUser}
         />
       </main>
+
+      <MobileBottomNav />
     </Router>
   );
 }

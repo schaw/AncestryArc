@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
-import { User, Users, MapPin, Calendar, Sparkles } from 'lucide-react';
+import { User, Users, MapPin, Calendar, Sparkles, X, GitFork } from 'lucide-react';
 import { useAuth } from '../firebase/authContext';
 import { getMaskedName } from '../utils/masking';
 import { SocialLinkBadges } from './SocialLinksEditor';
@@ -19,6 +19,14 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
   const [isDark, setIsDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
   const [hoveredNode, setHoveredNode] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
+  const [selectedMobileNode, setSelectedMobileNode] = useState(null);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -258,6 +266,7 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
         linkLineDash={link => link.type === 'dotted' ? [3, 3] : null}
         linkColor={link => link.type === 'dotted' ? (isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.3)') : (isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.65)')}
         onNodeHover={(node) => {
+          if (isMobile) return; // Prevent sticky hover tooltips on touch devices
           if (node && !node.isUnion) {
             setHoveredNode(node);
           } else {
@@ -266,14 +275,19 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
         }}
         onNodeClick={node => {
           if (!node.isUnion) {
-            if (graphRef.current && Number.isFinite(node.x) && Number.isFinite(node.y)) {
-              graphRef.current.centerAt(node.x, node.y, 500);
-              graphRef.current.zoom(2.5, 500);
+            if (isMobile) {
+              setSelectedMobileNode(node);
+            } else {
+              if (graphRef.current && Number.isFinite(node.x) && Number.isFinite(node.y)) {
+                graphRef.current.centerAt(node.x, node.y, 500);
+                graphRef.current.zoom(2.5, 500);
+              }
+              onNodeClick(node.id);
             }
-            onNodeClick(node.id);
           }
         }}
         onBackgroundClick={() => {
+          if (isMobile) setSelectedMobileNode(null);
           if (graphRef.current) {
             graphRef.current.zoomToFit(500, 35);
           }
@@ -286,8 +300,99 @@ export default function GlobalGraph({ people, onNodeClick, viewMode = 'web' }) {
         }}
       />
 
-      {/* Zero-Latency Instant Floating Hover Card */}
-      {hoveredNode && (
+      {/* Mobile Touch Detail Sheet */}
+      {isMobile && selectedMobileNode && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 12,
+            left: 12,
+            right: 12,
+            background: 'var(--surface-color)',
+            borderRadius: '16px',
+            border: '1.5px solid var(--border-color)',
+            boxShadow: 'var(--elevation-3)',
+            padding: '14px 16px',
+            zIndex: 100,
+            animation: 'fadeInUp 0.2s ease-out'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ 
+                width: '36px', 
+                height: '36px', 
+                borderRadius: '50%', 
+                background: 'var(--gradient-primary)', 
+                color: '#fff', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                fontSize: '13px',
+                fontWeight: 700 
+              }}>
+                {selectedMobileNode.initials}
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                  {selectedMobileNode.displayLabel}
+                </div>
+                {selectedMobileNode.nickname && (
+                  <div style={{ fontSize: '0.75rem', color: 'var(--primary-color)', fontWeight: 600 }}>
+                    "{selectedMobileNode.nickname}"
+                  </div>
+                )}
+              </div>
+            </div>
+            <button 
+              onClick={() => setSelectedMobileNode(null)} 
+              className="btn btn-text" 
+              style={{ padding: '4px', minWidth: 'auto', color: 'var(--text-hint)' }}
+              title="Close card"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+            {selectedMobileNode.dob && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Calendar size={13} color="var(--primary-color)" /> Born: {selectedMobileNode.dob}
+              </span>
+            )}
+            {selectedMobileNode.ancestralVillage && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <MapPin size={13} color="var(--secondary-color)" /> {selectedMobileNode.ancestralVillage}
+              </span>
+            )}
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Users size={13} color="var(--accent-color)" /> {selectedMobileNode.childrenCount} {selectedMobileNode.childrenCount === 1 ? 'Child' : 'Children'}
+            </span>
+          </div>
+
+          {selectedMobileNode.socialLinks && selectedMobileNode.socialLinks.length > 0 && (
+            <div style={{ marginBottom: '10px' }}>
+              <SocialLinkBadges links={selectedMobileNode.socialLinks} isLoggedIn={true} />
+            </div>
+          )}
+
+          <button 
+            type="button"
+            className="btn btn-primary"
+            style={{ width: '100%', padding: '9px', fontSize: '0.85rem', justifyContent: 'center', gap: '6px' }}
+            onClick={() => {
+              const id = selectedMobileNode.id;
+              setSelectedMobileNode(null);
+              onNodeClick(id);
+            }}
+          >
+            <GitFork size={15} /> Focus Lineage Tree
+          </button>
+        </div>
+      )}
+
+      {/* Desktop Hover Card */}
+      {!isMobile && hoveredNode && (
         <div
           style={{
             position: 'absolute',

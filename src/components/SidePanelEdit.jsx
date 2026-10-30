@@ -266,36 +266,37 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
 
   return (
     <div className="side-panel-drawer">
-      <div className="d-flex justify-between align-center mb-4">
+      <div className="d-flex justify-between align-center side-panel-header">
         <h3 style={{ margin: 0 }}>Edit Person</h3>
         <div className="d-flex gap-2">
           <button onClick={handleExportLineage} className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '0.75rem', gap: '4px' }} title="Export Lineage as JSON">
             <Download size={14} /> Export
           </button>
-          <button onClick={onDiscard} className="btn btn-text" style={{ padding: '4px', minWidth: 'auto' }}>
-            <X size={18} />
+          <button onClick={onDiscard} className="btn btn-text" style={{ padding: '6px', minWidth: 'auto' }} title="Close drawer">
+            <X size={20} />
           </button>
         </div>
       </div>
 
-      <div className="form-group">
-        <label className="form-label">System ID</label>
-        <div className="d-flex align-center gap-2">
-          <input type="text" className="form-control" value={formData.id} disabled style={{ backgroundColor: 'var(--background-color)', opacity: 0.7 }} />
-          <button 
-            type="button"
-            onClick={copyToClipboard}
-            className="btn btn-text"
-            style={{ padding: '8px', minWidth: 'auto', color: copiedId ? 'green' : 'var(--primary-color)' }}
-            title="Copy System ID"
-          >
-            {copiedId ? <Check size={20} /> : <Copy size={20} />}
-          </button>
+      <div className="side-panel-body">
+        <div className="form-group">
+          <label className="form-label">System ID</label>
+          <div className="d-flex align-center gap-2">
+            <input type="text" className="form-control" value={formData.id} disabled style={{ backgroundColor: 'var(--background-color)', opacity: 0.7 }} />
+            <button 
+              type="button"
+              onClick={copyToClipboard}
+              className="btn btn-text"
+              style={{ padding: '8px', minWidth: 'auto', color: copiedId ? 'green' : 'var(--primary-color)' }}
+              title="Copy System ID"
+            >
+              {copiedId ? <Check size={20} /> : <Copy size={20} />}
+            </button>
+          </div>
+          <small style={{ display: 'block', marginTop: '4px', color: 'var(--text-secondary)' }}>
+            Created By: <strong>{person.createdBy}</strong>
+          </small>
         </div>
-        <small style={{ display: 'block', marginTop: '4px', color: 'var(--text-secondary)' }}>
-          Created By: <strong>{person.createdBy}</strong>
-        </small>
-      </div>
 
       {/* Family Photos (Max 3 Slots) */}
       <div className="mb-4">
@@ -459,8 +460,9 @@ export default function SidePanelEdit({ person, people = [], onSave, onDiscard, 
           </button>
         </div>
       ))}
+      </div>
 
-      <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-color)' }}>
+      <div className="side-panel-footer">
         {showDeleteConfirm ? (
           <div style={{ background: 'rgba(239, 68, 68, 0.08)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
             <p style={{ margin: '0 0 10px', fontSize: '0.85rem', color: 'var(--error-color)', fontWeight: 600 }}>

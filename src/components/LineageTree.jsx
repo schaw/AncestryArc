@@ -180,6 +180,13 @@ export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpd
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [rfInstance, setRfInstance] = useState(null);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (rfInstance && nodes.length > 0) {
@@ -414,7 +421,7 @@ export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpd
             borderColor: 'var(--border-color)'
           }}
         >
-          <ArrowLeft size={16} /> Back to Global Web
+          <ArrowLeft size={15} /> {isMobile ? 'Web' : 'Back to Global Web'}
         </button>
       </div>
 
@@ -432,10 +439,15 @@ export default function LineageTree({ people, rootId, onBack, onNodeClick, onUpd
         fitView
         fitViewOptions={{ padding: 0.12 }}
         attributionPosition="bottom-left"
+        preventScrolling={true}
+        panOnDrag={true}
+        zoomOnPinch={true}
       >
         <Background color="var(--text-hint)" gap={20} size={1} />
-        <Controls />
-        <MiniMap zoomable pannable nodeColor={(n) => n.type === 'union' ? '#94a3b8' : (n.data?.isRoot ? '#f472b6' : '#7c3aed')} />
+        <Controls position="bottom-left" />
+        {!isMobile && (
+          <MiniMap zoomable pannable nodeColor={(n) => n.type === 'union' ? '#94a3b8' : (n.data?.isRoot ? '#f472b6' : '#7c3aed')} />
+        )}
       </ReactFlow>
 
       {selectedDetails && (
