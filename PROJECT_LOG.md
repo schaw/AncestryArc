@@ -113,6 +113,14 @@
 - [x] **Unrestricted Owner & Edit Access Across All Nodes**:
   - Removed view-only blocks and masked placeholder fields (••••) so all nodes are immediately editable across mobile and desktop.
   - Save, Discard, and Delete operations fully enabled without requiring Google OAuth popups for routine testing.
+- [x] **Complete Mobile Experience Overhaul**:
+  - **Native Bottom Navigation Bar**: Shifted navigation (Dashboard, Add Person, Bulk Entry) to an ergonomic bottom tab bar on mobile, making the top bar a slim 52px single row.
+  - **Two-Row Adaptive Mobile Toolbar**: Replaced cluttered 5-row stacked toolbar with a clean 2-row layout (Tabs + Gen Gravity in Row 1; Search + Quick Add + More Actions Menu in Row 2).
+  - **Zero Page Scroll & Full-Viewport Fit**: Set canvas container to 100dvh dynamic height, eliminating double-scroll locks and viewport jumps on mobile browsers.
+  - **Touch-Friendly Person Sheet**: Tapping a node in Global Web displays a sleek bottom card rather than a stuck floating tooltip.
+  - **Sticky Side Panel Drawer**: Drawer on mobile features a fixed header and sticky bottom action bar (Delete / Discard / Save) so users never have to scroll past 20 fields to save edits.
+  - **iOS Safari Auto-Zoom Fix**: Enforced ont-size: 16px on mobile inputs to eliminate involuntary camera zoom jumps when tapping form fields.
+  - **Touch Gesture Optimization**: Added 	ouch-action: none to canvas and hidden ReactFlow MiniMap on mobile to prevent touch collisions.
 
 ---
 
